@@ -25,7 +25,7 @@
   .btn-secondary { background:none; border:1.5px solid rgba(27,58,107,0.2); color:#1B3A6B; border-radius:10px; padding:12px 20px; font-weight:700; cursor:pointer; font-size:14px; }
   .chip { background:#F7F5EF; border:1.5px solid rgba(27,58,107,0.15); color:#1B3A6B; font-size:13px; font-weight:700; padding:8px 14px; border-radius:100px; cursor:pointer; }
   .chip.selected { background:#1B3A6B; color:#fff; border-color:#1B3A6B; }
-  input[type=text] { width:100%; padding:14px 16px; font-size:16px; border:1.5px solid rgba(27,58,107,0.2); border-radius:10px; margin-bottom:1rem; font-family:inherit; background:#fff; color:#33455E; }
+  input[type=text], input[type=password] { width:100%; padding:14px 16px; font-size:16px; border:1.5px solid rgba(27,58,107,0.2); border-radius:10px; margin-bottom:1rem; font-family:inherit; background:#fff; color:#33455E; }
 
   /* Portal */
   .name-card { background:#fff; border-radius:16px; padding:1.75rem; max-width:440px; margin:0 auto; box-shadow:0 10px 30px rgba(27,58,107,0.08); }
@@ -252,6 +252,7 @@
     <div class="portal-menu">
       <div class="portal-menu-user" id="portal-eyebrow">Hola</div>
       <div class="portal-menu-actions">
+        <button class="btn-secondary btn-refresh-sheets" id="btn-refrescar-portal" onclick="refrescarDesdeSheets()">🔄 Actualizar</button>
         <button class="btn-secondary" onclick="openHistorial()">📊 Mi historial</button>
         <button class="btn-secondary hidden" id="btn-portal-admin" onclick="openMyEmpresaAdmin()">⚙️ Administrar mi Empresa</button>
         <button class="btn-secondary" onclick="logout()">Salir</button>
@@ -397,6 +398,7 @@
     </div>
     <div style="text-align:center;margin-top:1.5rem">
       <button class="btn-secondary" id="btn-sync-sheets" onclick="sincronizarTodoConSheets()">🔄 Sincronizar todo con Google Sheets</button>
+      <button class="btn-secondary" id="btn-limpiar-dup" onclick="limpiarDuplicadosSheets()">🧹 Limpiar duplicados en Sheets</button>
       <div id="sync-status" style="font-size:12px;color:rgba(51,69,94,0.55);margin-top:8px"></div>
     </div>
   </div>
@@ -438,6 +440,9 @@
     <div class="header">
       <div class="eyebrow">Biblioteca de contenido</div>
       <h1>Técnicas y Clases</h1>
+    </div>
+    <div style="text-align:center;margin-bottom:1rem">
+      <button class="btn-secondary btn-refresh-sheets" onclick="refrescarDesdeSheets()">🔄 Actualizar desde Google Sheets</button>
     </div>
     <div class="content-counters" id="content-counters"></div>
     <div class="content-tabs">
@@ -534,6 +539,9 @@
     <div class="header">
       <div class="eyebrow" id="au-empresa-nombre">Empresa</div>
       <h1>Usuarios y Licencias</h1>
+    </div>
+    <div style="text-align:center;margin-bottom:1rem">
+      <button class="btn-secondary btn-refresh-sheets" onclick="refrescarDesdeSheets()">🔄 Actualizar desde Google Sheets</button>
     </div>
     <div class="name-card" style="max-width:none;margin-bottom:1.25rem">
       <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Tope de licencias del plan</label>
@@ -1101,6 +1109,25 @@ function renderPortal() {
       <div class="clase-stats"><span>${intentos} intento${intentos===1?'':'s'}</span><span>${sumaMejores} / ${maxPosible} pts</span></div>
     </div>`;
   }).join('');
+}
+
+async function refrescarDesdeSheets() {
+  const botones = document.querySelectorAll('.btn-refresh-sheets');
+  botones.forEach(b => b.disabled = true);
+
+  await Promise.all([loadContent(), loadEmpresas()]);
+
+  if (!document.getElementById('screen-portal').classList.contains('hidden')) renderPortal();
+  if (!document.getElementById('screen-admin-contenido').classList.contains('hidden')) {
+    renderContentCounters(); renderTecnicasList(); renderClasesList();
+  }
+  if (!document.getElementById('screen-admin-usuarios').classList.contains('hidden')) {
+    const emp = EMPRESAS[currentAdminEmpresaId];
+    if (emp) { document.getElementById('au-max').value = emp.maxUsuarios; renderUsuariosList(); }
+  }
+  if (!document.getElementById('screen-admin-empresas').classList.contains('hidden')) openAdminEmpresas();
+
+  botones.forEach(b => b.disabled = false);
 }
 
 function openHistorial() {
@@ -1778,6 +1805,21 @@ async function finishPractice() {
 // ADMIN — Técnicas y Clases
 // ══════════════════════════════════════════════════════════════════════════
 function openAdminHub() { showScreen('admin-hub'); }
+
+async function limpiarDuplicadosSheets() {
+  const btn = document.getElementById('btn-limpiar-dup');
+  const status = document.getElementById('sync-status');
+  btn.disabled = true;
+  status.textContent = 'Limpiando duplicados…';
+  const res = await gs('limpiarDuplicados');
+  if (res && res.ok) {
+    status.textContent = `✅ Listo — se borraron ${res.borradas} fila(s) duplicada(s).`;
+    await Promise.all([loadContent(), loadEmpresas()]);
+  } else {
+    status.textContent = '❌ No se pudo limpiar — revisa la conexión con Sheets.';
+  }
+  btn.disabled = false;
+}
 
 async function sincronizarTodoConSheets() {
   const btn = document.getElementById('btn-sync-sheets');
