@@ -240,7 +240,7 @@
       <input type="text" id="login-user" placeholder="Ej. ana" autocomplete="off">
       <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Contraseña</label>
       <input type="text" id="login-pass" placeholder="Ej. demo123" autocomplete="off" onkeydown="if(event.key==='Enter') login()">
-      <button class="btn-primary" style="width:100%" onclick="login()">Ingresar</button>
+      <button class="btn-primary" style="width:100%" id="btn-login" onclick="login()" disabled>Cargando…</button>
     </div>
     <div id="login-help" class="name-card hidden" style="max-width:440px;margin-top:1rem;font-size:12.5px;line-height:1.7"></div>
   </div>
@@ -567,6 +567,40 @@ async function gs(action, data) {
 // Dispara la llamada al backend sin esperarla ni bloquear la UI — si falla, no rompe nada local.
 function gsFireAndForget(action, data) { gs(action, data).catch(()=>{}); }
 
+// Proxy de IA (OpenAI vía Render) — para el prospecto en vivo y la calificación con comprensión real.
+const API_BASE = 'https://simulador-conversaciones-ventas.onrender.com';
+
+function extractJson(raw) {
+  const cleaned = String(raw || '').replace(/```json|```/g, '').trim();
+  try { return JSON.parse(cleaned); } catch (e) {}
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if (match) { try { return JSON.parse(match[0]); } catch (e) {} }
+  throw new Error('No se pudo leer JSON de la respuesta: ' + cleaned.slice(0, 200));
+}
+
+async function callAI(system, messages, maxTokens) {
+  const res = await fetch(API_BASE + '/api/chat', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system, messages, max_tokens: maxTokens || 300 }),
+  });
+  const data = await res.json();
+  return (data.content?.[0]?.text || '').trim();
+}
+
+async function callDetector(system, userMsg, fallback, _isRetry) {
+  try {
+    const text = await callAI(system, [{ role: 'user', content: userMsg }], 250);
+    return extractJson(text);
+  } catch (e) {
+    console.error('callDetector falló' + (_isRetry ? ' (reintento)' : '') + ':', e);
+    if (!_isRetry) {
+      await new Promise(r => setTimeout(r, 2500));
+      return callDetector(system, userMsg, fallback, true);
+    }
+    return { ...fallback, que_le_falto: 'El servidor tardó en responder — vuelve a intentar tu respuesta.' };
+  }
+}
+
 const LS_NAME = 'nuwek_demo_username';
 const LS_PROGRESS = 'nuwek_demo_progreso';
 
@@ -635,19 +669,34 @@ const LS_CONTENT = 'nuwek_demo_contenido';
 let TECNICAS = {};
 let CLASES = [];
 
-function loadContent() {
+async function loadContent() {
+  const res = await gs('getContenido');
+  if (res && res.ok && res.tecnicas && Object.keys(res.tecnicas).length) {
+    TECNICAS = res.tecnicas;
+    CLASES = res.clases || [];
+    migrateTecnicas(); // aplica parches locales nuevos (si los hay) y los sube al Sheet
+    return;
+  }
+  // El Sheet no respondió o está vacío — usamos lo que haya local como respaldo,
+  // y si tampoco hay nada, sembramos los defaults y los subimos al Sheet.
   try {
     const saved = JSON.parse(localStorage.getItem(LS_CONTENT));
     if (saved && saved.tecnicas && saved.clases) {
       TECNICAS = saved.tecnicas;
       CLASES = saved.clases;
       migrateTecnicas();
+      await syncContentToBackend();
       return;
     }
   } catch(e) {}
   TECNICAS = JSON.parse(JSON.stringify(DEFAULT_TECNICAS));
   CLASES = JSON.parse(JSON.stringify(DEFAULT_CLASES));
   migrateTecnicas();
+  await syncContentToBackend();
+}
+async function syncContentToBackend() {
+  for (const t of Object.values(TECNICAS)) { await gs('saveTecnica', { tecnica: t }); }
+  for (const c of CLASES) { await gs('saveClase', { clase: c }); }
 }
 function saveContent() {
   localStorage.setItem(LS_CONTENT, JSON.stringify({ tecnicas: TECNICAS, clases: CLASES }));
@@ -671,7 +720,10 @@ function migrateTecnicas() {
   if (patchVocabularioCaracteristicaBeneficio()) changed = true;
   if (patchFrasesCompletasCaracteristicaBeneficio()) changed = true;
   if (patchFixIncorrectaColision()) changed = true;
-  if (changed) saveContent();
+  if (changed) {
+    saveContent();
+    syncContentToBackend(); // sube los parches nuevos al Sheet, sin bloquear
+  }
 }
 
 // Corrige el ejemplo incorrecto que usaba "tiene" — chocaba con la palabra que sí clasificamos como válida
@@ -910,24 +962,20 @@ let EMPRESAS = {};
 let session = null; // { rol:'super_admin_nuwek'|'admin_empresa'|'vendedor', empresaId, nombre }
 let currentAdminEmpresaId = null; // qué Empresa se está viendo en la pantalla de Usuarios y Licencias
 
-function loadEmpresas() {
+async function loadEmpresas() {
+  const res = await gs('getEmpresas');
+  if (res && res.ok && res.empresas && Object.keys(res.empresas).length) {
+    EMPRESAS = res.empresas;
+    saveEmpresas(); // cache local, por si el internet falla más tarde
+    return;
+  }
+  // El Sheet no respondió — usamos el respaldo local si existe
   try {
     const saved = JSON.parse(localStorage.getItem(LS_EMPRESAS));
-    if (saved) { EMPRESAS = saved; return; }
+    if (saved && Object.keys(saved).length) { EMPRESAS = saved; return; }
   } catch(e) {}
-  // Datos de demo — 2 Empresas ya cargadas para poder probar de inmediato
-  EMPRESAS = {
-    faw: { nombre:'FAW', maxUsuarios:5, usuarios:[
-      { nombre:'admin_faw', password:'faw123', rol:'admin_empresa', activo:true },
-      { nombre:'ana', password:'demo123', rol:'vendedor', activo:true },
-      { nombre:'beto', password:'demo123', rol:'vendedor', activo:true },
-    ], asignaciones:{ ana:['ritmo','objeciones'], beto:['ritmo'] } },
-    acme: { nombre:'Acme Software', maxUsuarios:3, usuarios:[
-      { nombre:'admin_acme', password:'acme123', rol:'admin_empresa', activo:true },
-      { nombre:'carla', password:'demo123', rol:'vendedor', activo:true },
-    ], asignaciones:{ carla:['objeciones'] } },
-  };
-  saveEmpresas();
+  // Nada en ningún lado — empieza vacío, el súper admin da de alta Empresas reales desde el panel
+  EMPRESAS = {};
 }
 function saveEmpresas() { localStorage.setItem(LS_EMPRESAS, JSON.stringify(EMPRESAS)); }
 
@@ -995,10 +1043,11 @@ function loadProgress() {
 }
 function saveProgress(p) { localStorage.setItem(LS_PROGRESS, JSON.stringify(p)); }
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadContent();
-  loadEmpresas();
-  renderLoginHelp();
+document.addEventListener('DOMContentLoaded', async () => {
+  await Promise.all([loadContent(), loadEmpresas()]);
+  const btn = document.getElementById('btn-login');
+  btn.disabled = false;
+  btn.textContent = 'Ingresar';
 });
 
 // ── PORTAL (dashboard) ───────────────────────────────────────────────────────
@@ -1492,12 +1541,24 @@ const RAMA_LINEAS = {
 const SIM_PROSPECTO_LINEAS = ['Ok, cuéntame más.', 'Mmm, no estoy seguro todavía.', 'Eso suena bien, ¿qué más incluye?', '¿Y cómo se compara con lo que ya tengo?', 'Entiendo, sigue.', 'No sé, se me hace parecido a lo que ya vi en otro lado.'];
 function pickRandom(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
 
-function nextBranchTurn() {
+async function nextBranchTurn() {
   const ramaKeys = Object.keys(TECNICAS[ctx.tecnicaId].ramas);
   const ramaKey = ramaKeys[Math.floor(Math.random()*ramaKeys.length)];
-  const texto = pickRandom(RAMA_LINEAS[ramaKey] || ['...']);
-  addBubble('prospecto', texto);
-  ctx.messages.push({ role:'assistant', content:texto });
+  const avatar = AVATARS_ESTANDAR.find(a=>a.id===ctx.avatarId);
+  const estiloMap = {
+    si: 'Responde de forma CLARAMENTE POSITIVA/AFIRMATIVA — que se note que dice que sí.',
+    no: 'Responde con una OBJECIÓN O RECHAZO claro — que se note que dice que no.',
+    ambiguo: 'Responde de forma AMBIGUA, dudosa, sin comprometerte — ni sí ni no.',
+  };
+  const system = `Eres un prospecto (personaje: ${avatar.nombre} — ${avatar.desc}) en una negociación de ventas B2B, industria: ${ctx.industria}.
+${estiloMap[ramaKey] || ''} Responde en español, 1-2 frases, natural, sin explicar tu actitud, sin JSON.`;
+  const thinkingRow = addBubble('prospecto', '<span class="msg-bubble thinking">escribiendo…</span>');
+  let texto;
+  try { texto = await callAI(system, ctx.messages, 150); }
+  catch (e) { console.error('nextBranchTurn falló:', e); texto = pickRandom(RAMA_LINEAS[ramaKey] || ['...']); }
+  thinkingRow.remove();
+  addBubble('prospecto', texto || '...');
+  ctx.messages.push({ role:'assistant', content: texto || '...' });
   ctx.ramaEsperada = ramaKey;
 }
 
@@ -1512,26 +1573,32 @@ function showNextLinealDisparador(t) {
   ctx.messages.push({ role:'assistant', content:disp });
 }
 
-function sendMessage() {
+async function sendMessage() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text) return;
   input.value = '';
+  document.getElementById('btn-send').disabled = true;
   const vendorRow = addBubble('vendedor', text);
   ctx.messages.push({ role:'user', content:text });
 
   if (ctx.modo === 'ejercicio') {
     const t = TECNICAS[ctx.tecnicaId];
-    if (t.ramificada) handleBranchAnswer(t, text, vendorRow);
-    else handleLinealAnswer(t, text, vendorRow);
+    if (t.ramificada) await handleBranchAnswer(t, text, vendorRow);
+    else await handleLinealAnswer(t, text, vendorRow);
   } else {
-    handleSimTurn(text, vendorRow);
+    await handleSimTurn(text, vendorRow);
   }
+  document.getElementById('btn-send').disabled = false;
 }
 
-function handleBranchAnswer(t, text, vendorRow) {
+async function handleBranchAnswer(t, text, vendorRow) {
   const ramaObj = t.ramas[ctx.ramaEsperada];
-  const parsed = mockEvaluateRama(ramaObj, text);
+  const detSystem = `Eres evaluador de la técnica ramificada "${t.nombre}". El prospecto ya está en la rama "${ramaObj.label}", cuya técnica correcta es: ${ramaObj.correcto}
+Evalúa si la respuesta del vendedor aplicó bien esa técnica — no necesita ser idéntica al ejemplo, pero sí tener la misma intención. JSON sin backticks: {"acierto":true,"que_le_falto":""}`;
+  const detUser = `Respuesta del vendedor: "${text}"`;
+  const fallback = mockEvaluateRama(ramaObj, text);
+  const parsed = await callDetector(detSystem, detUser, fallback);
 
   const fb = parsed.acierto
     ? `<div class="msg-feedback perfect"><div class="msg-feedback-rama">Rama: ${ramaObj.label}</div>✅ Aplicaste bien la técnica.</div>`
@@ -1547,8 +1614,13 @@ function handleBranchAnswer(t, text, vendorRow) {
   else nextBranchTurn();
 }
 
-function handleLinealAnswer(t, text, vendorRow) {
-  const parsed = mockEvaluateLineal(t, text);
+async function handleLinealAnswer(t, text, vendorRow) {
+  const correctasTxt = (t.correctas||[]).map(c=>`- "${c}"`).join('\n');
+  const incorrectasTxt = (t.incorrectas||[]).map(c=>`- "${c}"`).join('\n');
+  const detSystem = `Eres evaluador de la técnica "${t.nombre}". Ejemplos de respuesta correcta:\n${correctasTxt}\nEjemplos de respuesta incorrecta:\n${incorrectasTxt}\nEvalúa si la respuesta del vendedor aplica bien esta técnica — no necesita ser idéntica a los ejemplos, pero sí tener la misma intención y contexto. JSON sin backticks: {"acierto":true,"que_le_falto":""}`;
+  const detUser = `Disparador: "${ctx.disparadorUsado}"\nRespuesta del vendedor: "${text}"`;
+  const fallback = mockEvaluateLineal(t, text);
+  const parsed = await callDetector(detSystem, detUser, fallback);
 
   const fb = parsed.acierto
     ? `<div class="msg-feedback perfect">✅ Aplicaste bien la técnica.</div>`
@@ -1564,15 +1636,32 @@ function handleLinealAnswer(t, text, vendorRow) {
   else showNextLinealDisparador(t);
 }
 
-function handleSimTurn(text, vendorRow) {
-  const personaMsg = pickRandom(SIM_PROSPECTO_LINEAS);
-  addBubble('prospecto', personaMsg);
-  ctx.messages.push({ role:'assistant', content:personaMsg });
+async function handleSimTurn(text, vendorRow) {
+  const avatar = AVATARS.find(a=>a.id===ctx.avatarId);
+  const personaSystem = `Eres un prospecto (${avatar.nombre}) en una negociación de ventas, industria ${ctx.industria}.
+Conocimiento del tema: ${CONOCIMIENTO_DESC[ctx.conocimiento]}
+Qué tanto platicas: ${PLATICA_DESC_DEMO[ctx.platica]}
+Qué tanto objetas: ${OBJETA_DESC_DEMO[ctx.objeta]}
+Responde en español, texto plano, breve, sin JSON.`;
+  const thinkingRow = addBubble('prospecto', '<span class="msg-bubble thinking">escribiendo…</span>');
+  let personaMsg;
+  try { personaMsg = await callAI(personaSystem, ctx.messages, 200); }
+  catch (e) { console.error('handleSimTurn persona falló:', e); personaMsg = pickRandom(SIM_PROSPECTO_LINEAS); }
+  thinkingRow.remove();
+  addBubble('prospecto', personaMsg || '...');
+  ctx.messages.push({ role:'assistant', content: personaMsg || '...' });
 
-  const nuevasNombres = mockDetectTecnicasAplicadas(ctx.tecnicasClase, text);
+  const tecnicasDesc = ctx.tecnicasClase.map(t => t.ramificada
+    ? `- "${t.nombre}": técnica ramificada, se considera aplicada si maneja bien cualquiera de sus ramas`
+    : `- "${t.nombre}": correcta se ve como "${(t.correctas||[])[0]||''}"`).join('\n');
+  const detSystem = `Eres clasificador. Determina qué técnicas de esta lista aplicó bien el vendedor en su último mensaje:\n${tecnicasDesc}\nJSON sin backticks: {"tecnicas_aplicadas":["nombre exacto"]}`;
+  const detUser = `Vendedor respondió: "${text}"`;
+  const fallbackNombres = mockDetectTecnicasAplicadas(ctx.tecnicasClase, text);
+  const parsed = await callDetector(detSystem, detUser, { tecnicas_aplicadas: fallbackNombres });
+
   let newFound = 0;
-  nuevasNombres.forEach(nombre => {
-    const t = ctx.tecnicasClase.find(tc => tc.nombre === nombre);
+  (parsed.tecnicas_aplicadas||[]).forEach(nombre => {
+    const t = ctx.tecnicasClase.find(tc => tc.nombre.toLowerCase()===String(nombre).toLowerCase() || tc.nombre.toLowerCase().includes(String(nombre).toLowerCase()));
     if (t && !ctx.touched.has(t.id)) { ctx.touched.add(t.id); newFound++; }
   });
   renderSimConceptBar();
@@ -1583,7 +1672,7 @@ function handleSimTurn(text, vendorRow) {
   vendorRow.querySelector('.msg-col').insertAdjacentHTML('beforeend', fb);
 
   ctx.turnLog.push({
-    tecnica: nuevasNombres.length ? nuevasNombres.join(', ') : null,
+    tecnica: (parsed.tecnicas_aplicadas||[]).length ? parsed.tecnicas_aplicadas.join(', ') : null,
     acierto: newFound > 0,
     falto: newFound > 0 ? '' : 'No se detectó ninguna técnica de la fórmula en este mensaje.',
     respuesta: text,
@@ -1616,8 +1705,17 @@ function mockMimoSummary() {
   };
 }
 
+async function generarMimoSummary() {
+  const fallback = mockMimoSummary();
+  const resumen = ctx.modo === 'ejercicio'
+    ? ctx.turnLog.map((t,i)=>`Turno ${i+1}: "${t.respuesta}" — ${t.acierto?'acertó':'falló — '+t.falto}`).join('\n')
+    : ctx.turnLog.map((t,i)=>`Turno ${i+1}: "${t.respuesta}" — ${t.acierto?'aplicó: '+t.tecnica:'no aplicó ninguna técnica nueva'}`).join('\n');
+  const mimoSystem = `Eres coach de ventas. Da retroalimentación en las 4 categorías fijas MIMO (Mantener, Incorporar, Modificar, Omitir) sobre este desempeño, basándote en las respuestas reales que dio el vendedor. JSON sin backticks: {"mantener":"...","incorporar":"...","modificar":"...","omitir":"..."} cada valor 1-2 frases, español, tuteando.`;
+  return await callDetector(mimoSystem, resumen, fallback);
+}
+
 // ── RESULTADO + MIMO ──────────────────────────────────────────────────────────
-function finishPractice() {
+async function finishPractice() {
   let score;
   if (ctx.modo === 'ejercicio') {
     const fallos = Math.min(ctx.turn - ctx.hits, 3);
@@ -1630,7 +1728,7 @@ function finishPractice() {
   document.getElementById('result-score').innerHTML = score + '<span style="font-size:16px"> pts</span>';
   showScreen('result');
 
-  const mimo = mockMimoSummary();
+  const mimo = await generarMimoSummary();
   document.getElementById('mimo-mantener').textContent = mimo.mantener;
   document.getElementById('mimo-incorporar').textContent = mimo.incorporar;
   document.getElementById('mimo-modificar').textContent = mimo.modificar;
