@@ -16,6 +16,7 @@
   .eyebrow { font-size:12px; font-weight:800; color:#E8611A; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.5rem; }
   h1 { font-size:26px; font-weight:900; color:#1B3A6B; margin-bottom:0.4rem; }
   .subtitle { font-size:14px; color:rgba(51,69,94,0.7); font-weight:600; }
+  .live-clock { font-size:13px; font-weight:800; color:#1B3A6B; margin-top:10px; font-variant-numeric:tabular-nums; letter-spacing:0.02em; }
   .btn-back { background:none; border:none; color:rgba(51,69,94,0.6); font-size:13px; font-weight:700; cursor:pointer; margin-bottom:1rem; padding:0; }
   .btn-back:hover { color:#1B3A6B; }
   .btn-primary { background:#1B3A6B; color:#fff; border:none; border-radius:10px; padding:14px 22px; font-size:15px; font-weight:700; cursor:pointer; }
@@ -231,15 +232,16 @@
   <!-- PANTALLA: LOGIN -->
   <div id="screen-name">
     <div class="header">
-      <div class="eyebrow">Portal Nuwek · Demo</div>
+      <div class="eyebrow">Portal Nuwek</div>
       <h1>Universo de Simuladores</h1>
-      <div class="subtitle">Datos inventados + localStorage — para probar la experiencia antes de construir el backend real</div>
+      <div class="subtitle">La venta no se improvisa — se entrena.</div>
+      <div class="live-clock" id="live-clock">—</div>
     </div>
     <div class="name-card">
       <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Usuario</label>
-      <input type="text" id="login-user" placeholder="Ej. ana" autocomplete="off">
+      <input type="text" id="login-user" placeholder="Tu nombre de usuario" autocomplete="off">
       <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Contraseña</label>
-      <input type="text" id="login-pass" placeholder="Ej. demo123" autocomplete="off" onkeydown="if(event.key==='Enter') login()">
+      <input type="password" id="login-pass" placeholder="Tu contraseña" autocomplete="off" onkeydown="if(event.key==='Enter') login()">
       <button class="btn-primary" style="width:100%" id="btn-login" onclick="login()" disabled>Cargando…</button>
     </div>
     <div id="login-help" class="name-card hidden" style="max-width:440px;margin-top:1rem;font-size:12.5px;line-height:1.7"></div>
@@ -1043,8 +1045,24 @@ function loadProgress() {
 }
 function saveProgress(p) { localStorage.setItem(LS_PROGRESS, JSON.stringify(p)); }
 
+function tickClock() {
+  const el = document.getElementById('live-clock');
+  if (!el) return;
+  const now = new Date();
+  const fecha = now.toLocaleDateString('es-MX', { weekday:'long', day:'numeric', month:'long' });
+  const hora = now.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  el.textContent = `🕐 ${fecha}, ${hora}`;
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+function withTimeout(promise, ms) {
+  return Promise.race([promise, new Promise(resolve => setTimeout(() => resolve(null), ms))]);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
-  await Promise.all([loadContent(), loadEmpresas()]);
+  // Si el Sheet tarda más de 10s (o no responde), igual se habilita el login con lo que haya local.
+  await withTimeout(Promise.all([loadContent(), loadEmpresas()]), 10000);
   const btn = document.getElementById('btn-login');
   btn.disabled = false;
   btn.textContent = 'Ingresar';
