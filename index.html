@@ -543,11 +543,16 @@
     <div style="text-align:center;margin-bottom:1rem">
       <button class="btn-secondary btn-refresh-sheets" onclick="refrescarDesdeSheets()">🔄 Actualizar desde Google Sheets</button>
     </div>
-    <div class="name-card" style="max-width:none;margin-bottom:1.25rem">
+    <div class="name-card" style="max-width:none;margin-bottom:1.25rem" id="au-tope-editable">
       <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Tope de licencias del plan</label>
       <input type="text" id="au-max" inputmode="numeric">
       <button class="btn-secondary" onclick="updateMaxUsuarios()">Actualizar tope</button>
       <div id="au-cap-status" style="font-size:12.5px;color:rgba(51,69,94,0.6);margin-top:10px"></div>
+    </div>
+    <div class="name-card hidden" style="max-width:none;margin-bottom:1.25rem" id="au-tope-solo-lectura">
+      <div style="font-size:11px;font-weight:800;color:rgba(51,69,94,0.5);text-transform:uppercase;margin-bottom:6px">Licencias del plan</div>
+      <div id="au-cap-status-solo-lectura" style="font-size:22px;font-weight:900;color:#1B3A6B"></div>
+      <div style="font-size:12px;color:rgba(51,69,94,0.5);margin-top:4px">El tope de licencias solo lo puede cambiar Nuwek.</div>
     </div>
     <div class="name-card" style="max-width:none;margin-bottom:1.25rem">
       <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Invitar usuario nuevo</label>
@@ -575,7 +580,29 @@ async function gs(action, data) {
   }
 }
 // Dispara la llamada al backend sin esperarla ni bloquear la UI — si falla, no rompe nada local.
-function gsFireAndForget(action, data) { gs(action, data).catch(()=>{}); }
+function gsFireAndForget(action, data) {
+  gs(action, data).then(res => {
+    if (!res || !res.ok) mostrarToast('⚠️ No se guardó en Google Sheets — revisa tu conexión y vuelve a intentar.', 'bad');
+  }).catch(() => {
+    mostrarToast('⚠️ No se guardó en Google Sheets — revisa tu conexión y vuelve a intentar.', 'bad');
+  });
+}
+
+function mostrarToast(msg, tipo) {
+  let el = document.getElementById('nuwek-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'nuwek-toast';
+    el.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:2000;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.15);max-width:90vw;text-align:center;';
+    document.body.appendChild(el);
+  }
+  el.style.background = tipo === 'bad' ? '#C93A3E' : '#2E8B57';
+  el.style.color = '#fff';
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
 
 // Proxy de IA (OpenAI vía Render) — para el prospecto en vivo y la calificación con comprensión real.
 const API_BASE = 'https://simulador-conversaciones-ventas.onrender.com';
@@ -1122,8 +1149,7 @@ async function refrescarDesdeSheets() {
     renderContentCounters(); renderTecnicasList(); renderClasesList();
   }
   if (!document.getElementById('screen-admin-usuarios').classList.contains('hidden')) {
-    const emp = EMPRESAS[currentAdminEmpresaId];
-    if (emp) { document.getElementById('au-max').value = emp.maxUsuarios; renderUsuariosList(); }
+    if (EMPRESAS[currentAdminEmpresaId]) openAdminUsuarios();
   }
   if (!document.getElementById('screen-admin-empresas').classList.contains('hidden')) openAdminEmpresas();
 
@@ -2157,12 +2183,23 @@ function saveEmpresaNueva() {
 function openAdminUsuarios() {
   const emp = EMPRESAS[currentAdminEmpresaId];
   document.getElementById('au-empresa-nombre').textContent = emp.nombre;
-  document.getElementById('au-max').value = emp.maxUsuarios;
+
+  const esSuperAdmin = session.rol === 'super_admin_nuwek';
+  document.getElementById('au-tope-editable').classList.toggle('hidden', !esSuperAdmin);
+  document.getElementById('au-tope-solo-lectura').classList.toggle('hidden', esSuperAdmin);
+  if (esSuperAdmin) {
+    document.getElementById('au-max').value = emp.maxUsuarios;
+  } else {
+    const activos = emp.usuarios.filter(u=>u.activo).length;
+    document.getElementById('au-cap-status-solo-lectura').textContent = `${activos} / ${emp.maxUsuarios}`;
+  }
+
   renderUsuariosList();
   showScreen('admin-usuarios');
 }
 
 function updateMaxUsuarios() {
+  if (session.rol !== 'super_admin_nuwek') { alert('Solo Nuwek puede cambiar el tope de licencias.'); return; }
   const val = parseInt(document.getElementById('au-max').value, 10);
   if (!val || val < 1) { alert('Pon un número válido.'); return; }
   EMPRESAS[currentAdminEmpresaId].maxUsuarios = val;
