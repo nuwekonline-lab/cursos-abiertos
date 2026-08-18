@@ -1,0 +1,2079 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Portal Nuwek — Demo con datos inventados</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { background:#F7F5EF; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; background:#F7F5EF; color:#33455E; min-height:100vh; padding:2rem 1.5rem 3rem; }
+  .wrap { max-width:900px; margin:0 auto; }
+  .hidden { display:none !important; }
+  .header { text-align:center; margin-bottom:1.5rem; }
+  .eyebrow { font-size:12px; font-weight:800; color:#E8611A; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.5rem; }
+  h1 { font-size:26px; font-weight:900; color:#1B3A6B; margin-bottom:0.4rem; }
+  .subtitle { font-size:14px; color:rgba(51,69,94,0.7); font-weight:600; }
+  .btn-back { background:none; border:none; color:rgba(51,69,94,0.6); font-size:13px; font-weight:700; cursor:pointer; margin-bottom:1rem; padding:0; }
+  .btn-back:hover { color:#1B3A6B; }
+  .btn-primary { background:#1B3A6B; color:#fff; border:none; border-radius:10px; padding:14px 22px; font-size:15px; font-weight:700; cursor:pointer; }
+  .btn-primary:hover { background:#14294d; }
+  .btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
+  .btn-secondary { background:none; border:1.5px solid rgba(27,58,107,0.2); color:#1B3A6B; border-radius:10px; padding:12px 20px; font-weight:700; cursor:pointer; font-size:14px; }
+  .chip { background:#F7F5EF; border:1.5px solid rgba(27,58,107,0.15); color:#1B3A6B; font-size:13px; font-weight:700; padding:8px 14px; border-radius:100px; cursor:pointer; }
+  .chip.selected { background:#1B3A6B; color:#fff; border-color:#1B3A6B; }
+  input[type=text] { width:100%; padding:14px 16px; font-size:16px; border:1.5px solid rgba(27,58,107,0.2); border-radius:10px; margin-bottom:1rem; font-family:inherit; background:#fff; color:#33455E; }
+
+  /* Portal */
+  .name-card { background:#fff; border-radius:16px; padding:1.75rem; max-width:440px; margin:0 auto; box-shadow:0 10px 30px rgba(27,58,107,0.08); }
+  .portal-menu { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:#fff; border-radius:14px; padding:12px 18px; margin-bottom:1.5rem; box-shadow:0 6px 18px rgba(27,58,107,0.06); }
+  .portal-menu-user { font-size:13px; font-weight:800; color:#1B3A6B; }
+  .portal-menu-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .portal-menu-actions .btn-secondary { padding:9px 14px; font-size:12.5px; }
+  .clase-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:700px){ .clase-grid { grid-template-columns:1fr; } }
+  .clase-card { background:#fff; border-radius:16px; padding:1.5rem; box-shadow:0 8px 24px rgba(27,58,107,0.06); cursor:pointer; transition:transform .15s; }
+  .clase-card:hover { transform:translateY(-3px); }
+  .clase-name { font-size:17px; font-weight:900; color:#1B3A6B; margin-bottom:6px; }
+  .clase-pasos { font-size:12px; color:rgba(51,69,94,0.55); margin-bottom:14px; }
+  .clase-progress-bar { height:8px; background:#EEF1F7; border-radius:100px; overflow:hidden; margin-bottom:8px; }
+  .clase-progress-fill { height:100%; background:#2E8B57; border-radius:100px; }
+  .clase-stats { display:flex; justify-content:space-between; font-size:12px; color:rgba(51,69,94,0.6); font-weight:700; }
+  .historial-item { background:#fff; border-radius:14px; padding:14px 18px; margin-bottom:10px; box-shadow:0 6px 18px rgba(27,58,107,0.06); border-left:4px solid transparent; }
+  .historial-item.best { border-left-color:#F2C94C; background:linear-gradient(135deg,#FFFBEA,#fff); }
+  .historial-item-top { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .historial-item-title { font-weight:800; color:#1B3A6B; font-size:14.5px; }
+  .historial-badge { font-size:10px; font-weight:800; color:#B8860B; background:rgba(242,201,76,0.25); padding:3px 9px; border-radius:100px; white-space:nowrap; flex-shrink:0; }
+  .historial-item-sub { font-size:12px; color:rgba(51,69,94,0.55); margin-top:3px; }
+  .historial-item-score { font-size:20px; font-weight:900; color:#2E8B57; margin-top:6px; }
+
+  /* Class detail */
+  .paso-list { background:#fff; border-radius:16px; padding:1.5rem; box-shadow:0 8px 24px rgba(27,58,107,0.06); margin-bottom:1.25rem; }
+  .paso-row { display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid rgba(27,58,107,0.06); }
+  .paso-row-clickable { cursor:pointer; border-radius:10px; margin:0 -8px; padding:12px 8px; transition:background .12s; }
+  .paso-row-clickable:hover { background:#F7F5EF; }
+  .paso-info-hint { font-size:11.5px; font-weight:700; color:#3E6FB0; flex-shrink:0; }
+  .paso-stats-badge { font-size:10.5px; font-weight:800; color:#2E8B57; background:rgba(46,139,87,0.1); padding:3px 9px; border-radius:100px; flex-shrink:0; white-space:nowrap; }
+  .modal-progress { display:flex; gap:14px; background:#F7F5EF; border-radius:10px; padding:12px 16px; margin-bottom:1.25rem; }
+  .modal-progress-item { flex:1; text-align:center; }
+  .modal-progress-num { font-size:18px; font-weight:900; color:#1B3A6B; }
+  .modal-progress-lbl { font-size:10px; font-weight:700; color:rgba(51,69,94,0.55); text-transform:uppercase; }
+  .paso-row-resumen { border-top:2px dashed rgba(232,97,26,0.3); border-bottom:none; margin-top:4px; padding-top:16px; }
+
+  .content-counters { display:flex; gap:12px; justify-content:center; margin-bottom:1.25rem; }
+  .content-counter { background:#fff; border-radius:14px; padding:14px 22px; text-align:center; box-shadow:0 6px 18px rgba(27,58,107,0.06); min-width:110px; }
+  .content-counter-num { font-size:24px; font-weight:900; color:#1B3A6B; }
+  .content-counter-lbl { font-size:11px; font-weight:700; color:rgba(51,69,94,0.55); text-transform:uppercase; letter-spacing:0.03em; }
+  .content-tabs { display:flex; gap:8px; margin-bottom:1.25rem; }
+  .content-tab { flex:1; background:#fff; border:1.5px solid rgba(27,58,107,0.12); color:#1B3A6B; font-weight:700; font-size:14px; padding:11px; border-radius:10px; cursor:pointer; }
+  .content-tab.active { background:#1B3A6B; color:#fff; border-color:#1B3A6B; }
+  .uso-badge { font-size:10.5px; font-weight:800; color:#3E6FB0; background:rgba(62,111,176,0.12); padding:3px 9px; border-radius:100px; white-space:nowrap; flex-shrink:0; }
+  .uso-badge.sin-uso { color:rgba(51,69,94,0.45); background:#F7F5EF; }
+  .paso-num-r { background:#E8611A; }
+  .info-modal-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; margin:12px 0 6px; }
+  .info-modal-item { font-size:13.5px; color:#33455E; background:#F7F5EF; border-radius:8px; padding:9px 12px; margin-bottom:6px; line-height:1.4; }
+  .resumen-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .resumen-industria { font-size:12.5px; font-weight:800; color:#1B3A6B; text-align:center; margin-bottom:8px; }
+  .resumen-arrow { background:#F7F5EF; border:none; width:36px; height:36px; border-radius:50%; font-size:17px; color:#1B3A6B; cursor:pointer; flex-shrink:0; }
+  .resumen-arrow:hover { background:#EEF1F7; }
+  .resumen-counter { font-size:11.5px; font-weight:800; color:rgba(51,69,94,0.5); text-transform:uppercase; letter-spacing:0.04em; }
+  .resumen-text { font-size:14.5px; color:#33455E; font-weight:400; line-height:1.85; background:#F7F5EF; padding:16px 18px; border-radius:12px; border-left:4px solid #E8611A; }
+  .resumen-tag { color:#E8611A; font-weight:800; font-size:10.5px; text-transform:uppercase; letter-spacing:0.02em; }
+  .paso-row:last-child { border-bottom:none; }
+  .paso-num { width:28px; height:28px; border-radius:8px; background:#1B3A6B; color:#fff; font-weight:900; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .paso-info { flex:1; }
+  .paso-name { font-size:14.5px; font-weight:800; color:#1B3A6B; }
+  .paso-tag { font-size:11px; color:rgba(51,69,94,0.55); }
+  .paso-branch-badge { font-size:9px; font-weight:800; background:rgba(62,111,176,0.12); color:#3E6FB0; padding:2px 8px; border-radius:100px; margin-left:6px; }
+  .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:600px){ .mode-grid { grid-template-columns:1fr; } }
+  .mode-card { background:#fff; border-radius:16px; padding:1.75rem; text-align:center; box-shadow:0 8px 24px rgba(27,58,107,0.06); cursor:pointer; border:2.5px solid transparent; transition:background .15s, border-color .15s; }
+  .mode-card.mode-selected { background:#1B3A6B; border-color:#1B3A6B; }
+  .mode-card.mode-selected .mode-title { color:#fff; }
+  .mode-card.mode-selected .mode-desc { color:rgba(255,255,255,0.75); }
+  .mode-icon { font-size:34px; margin-bottom:8px; }
+  .mode-title { font-size:16px; font-weight:900; color:#1B3A6B; margin-bottom:6px; }
+  .mode-desc { font-size:12.5px; color:rgba(51,69,94,0.6); line-height:1.4; }
+
+  /* Selectors */
+  .select-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:1.25rem; }
+  @media (max-width:600px){ .select-grid { grid-template-columns:1fr; } }
+  .select-grid-industria { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:0.5rem; }
+  .select-grid-industria .select-card { padding:0.85rem 0.9rem; }
+  .select-grid-industria .select-title { font-size:13px; }
+  @media (max-width:700px){ .select-grid-industria { grid-template-columns:1fr 1fr; } }
+  @media (max-width:420px){ .select-grid-industria { grid-template-columns:1fr; } }
+  .select-card { background:#fff; border-radius:14px; padding:1.1rem 1.3rem; cursor:pointer; border:2px solid transparent; box-shadow:0 6px 18px rgba(27,58,107,0.06); }
+  .select-card.selected { border-color:#1B3A6B; background:#EEF1F7; }
+  .select-title { font-size:14.5px; font-weight:800; color:#1B3A6B; }
+  .select-sub { font-size:11.5px; color:rgba(51,69,94,0.6); margin-top:2px; }
+  .avatar-card { border-left:5px solid; }
+  .avatar-card.gender-hombre { border-left-color:#2563EB; }
+  .avatar-card.gender-mujer { border-left-color:#E64980; }
+  .diff-options { display:flex; gap:8px; margin-top:6px; }
+  .diff-opt { flex:1; background:#F7F5EF; border:1.5px solid transparent; color:#33455E; font-size:12px; font-weight:700; padding:8px; border-radius:8px; cursor:pointer; text-align:center; }
+  .diff-opt.selected { background:rgba(62,111,176,0.14); border-color:#3E6FB0; color:#1B3A6B; }
+
+  /* Chat */
+  .concept-bar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:1rem; padding:1rem; background:#fff; border-radius:14px; box-shadow:0 6px 18px rgba(27,58,107,0.06); }
+  .concept-chip { font-size:11.5px; font-weight:700; padding:6px 12px; border-radius:100px; border:1.5px solid #C93A3E; color:#C93A3E; background:rgba(201,58,62,0.06); }
+  .concept-chip.touched { border-color:#2E8B57; color:#fff; background:#2E8B57; }
+  .status-bar { display:flex; justify-content:space-between; margin-bottom:1rem; font-size:13px; font-weight:700; color:#1B3A6B; }
+  .status-item { background:#fff; padding:8px 16px; border-radius:100px; box-shadow:0 4px 12px rgba(27,58,107,0.06); }
+  .chat-box { background:#fff; border-radius:16px; padding:1.5rem; min-height:340px; max-height:440px; overflow-y:auto; box-shadow:0 8px 24px rgba(27,58,107,0.06); margin-bottom:1rem; display:flex; flex-direction:column; gap:12px; }
+  .msg-row { display:flex; }
+  .msg-row.vendedor { justify-content:flex-end; }
+  .msg-col { max-width:80%; display:flex; flex-direction:column; }
+  .msg-row.vendedor .msg-col { align-items:flex-end; }
+  .msg-label { font-size:9px; font-weight:800; text-transform:uppercase; opacity:0.5; margin-bottom:3px; }
+  .msg-bubble { padding:10px 14px; border-radius:14px; font-size:14px; line-height:1.45; }
+  .msg-bubble.vendedor { background:#1B3A6B; color:#fff; border-bottom-right-radius:4px; }
+  .msg-bubble.prospecto { background:#EEF1F7; color:#1B3A6B; border-bottom-left-radius:4px; }
+  .msg-bubble.thinking { background:#EEF1F7; color:rgba(27,58,107,0.5); font-style:italic; }
+  .msg-feedback { margin-top:6px; padding:8px 12px; border-radius:10px; background:rgba(201,58,62,0.08); border-left:3px solid #C93A3E; font-size:12px; }
+  .msg-feedback.perfect { background:rgba(46,139,87,0.1); border-left-color:#2E8B57; }
+  .msg-feedback-rama { font-weight:800; color:#3E6FB0; font-size:11px; text-transform:uppercase; margin-bottom:3px; }
+  .chat-input-row { display:flex; gap:10px; }
+  .chat-input { flex:1; padding:13px 16px; border:1.5px solid rgba(27,58,107,0.18); border-radius:10px; font-size:14px; font-family:inherit; background:#fff; color:#33455E; }
+  .btn-send { background:#1B3A6B; color:#fff; border:none; border-radius:10px; padding:13px 24px; font-weight:800; cursor:pointer; font-size:14px; }
+  .btn-send:disabled { opacity:0.4; cursor:not-allowed; }
+
+  /* Result */
+  .result-card { background:#fff; border-radius:20px; padding:2.25rem; text-align:center; box-shadow:0 12px 34px rgba(27,58,107,0.1); }
+  .result-score { font-size:48px; font-weight:900; color:#1B3A6B; margin:0.5rem 0; }
+  .mimo-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; text-align:left; margin:1.5rem 0; }
+  @media (max-width:600px){ .mimo-grid { grid-template-columns:1fr; } }
+  .detalle-respuestas-title { font-size:13px; font-weight:800; color:#1B3A6B; text-transform:uppercase; letter-spacing:0.04em; margin:1.75rem 0 0.75rem; text-align:left; }
+  .respuesta-item { border-radius:10px; padding:11px 14px; margin-bottom:8px; border-left:4px solid; }
+  .respuesta-item.ok { background:rgba(46,139,87,0.08); border-left-color:#2E8B57; }
+  .respuesta-item.bad { background:rgba(201,58,62,0.07); border-left-color:#C93A3E; }
+  .respuesta-item-texto { font-size:13.5px; color:#1B3A6B; font-weight:700; margin-bottom:4px; }
+  .respuesta-item-verdict { font-size:12.5px; color:#33455E; }
+  .mimo-box { border-radius:12px; padding:1rem 1.1rem; }
+  .mimo-box.mantener { background:rgba(46,139,87,0.08); border-left:4px solid #2E8B57; }
+  .mimo-box.incorporar { background:rgba(62,111,176,0.08); border-left:4px solid #3E6FB0; }
+  .mimo-box.modificar { background:rgba(242,201,76,0.12); border-left:4px solid #F2C94C; }
+  .mimo-box.omitir { background:rgba(201,58,62,0.08); border-left:4px solid #C93A3E; }
+  .mimo-title { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+  .mimo-text { font-size:13px; line-height:1.5; color:#33455E; }
+  .result-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+  /* Admin */
+  .rama-field, .paso-field { display:flex; gap:8px; align-items:flex-start; margin-bottom:10px; background:#F7F5EF; border-radius:10px; padding:10px 12px; }
+  .rama-field input, .paso-field select, .paso-field input { flex:1; margin-bottom:0; }
+  .btn-remove { background:none; border:none; color:#C93A3E; font-size:18px; cursor:pointer; padding:0 6px; flex-shrink:0; }
+  .admin-item-row { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid rgba(27,58,107,0.06); }
+  .admin-item-row:last-child { border-bottom:none; }
+  .admin-item-info { flex:1; }
+  .admin-item-name { font-size:14.5px; font-weight:800; color:#1B3A6B; }
+  .admin-item-sub { font-size:11.5px; color:rgba(51,69,94,0.55); }
+  .admin-item-actions { display:flex; gap:6px; }
+  .btn-icon { background:#F7F5EF; border:none; border-radius:8px; padding:8px 10px; cursor:pointer; font-size:13px; }
+  .usuario-card { background:#fff; border-radius:14px; padding:1.1rem 1.3rem; margin-bottom:10px; box-shadow:0 6px 18px rgba(27,58,107,0.06); }
+  .usuario-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .usuario-name { font-size:15px; font-weight:800; color:#1B3A6B; }
+  .toggle-switch { width:38px; height:22px; border-radius:100px; background:#ccc; position:relative; cursor:pointer; border:none; flex-shrink:0; }
+  .toggle-switch.on { background:#2E8B57; }
+  .toggle-switch::after { content:''; position:absolute; width:18px; height:18px; border-radius:50%; background:#fff; top:2px; left:2px; transition:left .15s; }
+  .toggle-switch.on::after { left:18px; }
+  .clase-check-row { display:flex; align-items:center; gap:8px; font-size:13px; padding:4px 0; }
+
+  /* Columnas de listas independientes (disparadores / correctas / incorrectas) */
+  .col-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:6px; }
+  @media (max-width:760px) { .col-grid { grid-template-columns:1fr; } }
+  .col-field { background:#F7F5EF; border-radius:12px; padding:12px; }
+  .col-count { font-weight:600; color:rgba(51,69,94,0.5); }
+  .col-list { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; min-height:4px; }
+  .col-item { display:flex; align-items:flex-start; gap:6px; background:#fff; border-radius:8px; padding:7px 9px; font-size:12.5px; line-height:1.4; }
+  .col-item span { flex:1; }
+  .col-add-row { display:flex; gap:6px; }
+  .col-add-row input { margin-bottom:0; padding:9px 10px; font-size:12.5px; }
+
+  /* Pasos con modal */
+  .steps-row { display:flex; align-items:stretch; gap:10px; margin-bottom:1.25rem; }
+  @media (max-width:700px) { .steps-row { flex-direction:column; } .step-arrow { transform:rotate(90deg); } }
+  .step-box { flex:1; background:#fff; border-radius:14px; padding:1.1rem 1.2rem; box-shadow:0 6px 18px rgba(27,58,107,0.06); cursor:pointer; border:2px solid transparent; text-align:left; }
+  .step-box.filled { border-color:#E8611A; background:#E8611A; }
+  .step-box.filled .step-label { color:rgba(255,255,255,0.7); }
+  .step-box.filled .step-value { color:#fff; }
+  .step-box.filled .step-num-badge { background:#fff; color:#E8611A; }
+  .step-num-badge { width:24px; height:24px; border-radius:7px; background:#1B3A6B; color:#fff; font-weight:900; font-size:12px; display:flex; align-items:center; justify-content:center; margin-bottom:8px; }
+  .step-label { font-size:11px; font-weight:800; color:rgba(51,69,94,0.55); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
+  .step-value { font-size:14.5px; font-weight:800; color:#1B3A6B; }
+  .step-value.placeholder { color:rgba(51,69,94,0.4); font-weight:600; }
+  .step-arrow { display:flex; align-items:center; justify-content:center; font-size:20px; color:rgba(27,58,107,0.25); flex-shrink:0; }
+
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(11,22,43,0.6); z-index:1000; align-items:center; justify-content:center; padding:1.5rem; }
+  .modal-overlay.open { display:flex; }
+  .modal-box { background:#fff; border-radius:20px; max-width:520px; width:100%; max-height:85vh; overflow-y:auto; padding:1.75rem; position:relative; }
+  .modal-box.wide { max-width:720px; }
+  .modal-close { position:absolute; top:1rem; right:1rem; background:#F7F5EF; border:none; width:32px; height:32px; border-radius:50%; font-size:16px; color:rgba(27,58,107,0.6); cursor:pointer; }
+  .modal-eyebrow { font-size:12px; font-weight:800; color:#E8611A; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:12px; }
+  .modal-diff-group { margin-bottom:1.25rem; }
+  .modal-diff-title { font-size:13.5px; font-weight:800; color:#1B3A6B; margin-bottom:8px; }
+
+  /* Header de 2 columnas en el chat + recap del avatar + cancelar */
+  .chat-header-row { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:1rem; flex-wrap:wrap; }
+  .chat-avatar-recap { background:#fff; border-radius:14px; padding:10px 16px; box-shadow:0 6px 18px rgba(27,58,107,0.06); display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .chat-avatar-recap-icon { font-size:24px; }
+  .chat-avatar-recap-name { font-size:13.5px; font-weight:800; color:#1B3A6B; }
+  .chat-avatar-recap-tags { display:flex; gap:4px; flex-wrap:wrap; margin-top:2px; }
+  .chat-avatar-recap-tag { font-size:9.5px; font-weight:700; color:rgba(51,69,94,0.6); background:#F7F5EF; padding:2px 7px; border-radius:100px; }
+  .btn-cancel-link { background:none; border:none; color:#C93A3E; font-size:12.5px; font-weight:700; cursor:pointer; padding:0; }
+  .btn-cancel-link:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- PANTALLA: LOGIN -->
+  <div id="screen-name">
+    <div class="header">
+      <div class="eyebrow">Portal Nuwek · Demo</div>
+      <h1>Universo de Simuladores</h1>
+      <div class="subtitle">Datos inventados + localStorage — para probar la experiencia antes de construir el backend real</div>
+    </div>
+    <div class="name-card">
+      <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Usuario</label>
+      <input type="text" id="login-user" placeholder="Ej. ana" autocomplete="off">
+      <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Contraseña</label>
+      <input type="text" id="login-pass" placeholder="Ej. demo123" autocomplete="off" onkeydown="if(event.key==='Enter') login()">
+      <button class="btn-primary" style="width:100%" onclick="login()">Ingresar</button>
+    </div>
+    <div id="login-help" class="name-card hidden" style="max-width:440px;margin-top:1rem;font-size:12.5px;line-height:1.7"></div>
+  </div>
+
+  <!-- PANTALLA: PORTAL (dashboard de clases) -->
+  <div id="screen-portal" class="hidden">
+    <div class="portal-menu">
+      <div class="portal-menu-user" id="portal-eyebrow">Hola</div>
+      <div class="portal-menu-actions">
+        <button class="btn-secondary" onclick="openHistorial()">📊 Mi historial</button>
+        <button class="btn-secondary hidden" id="btn-portal-admin" onclick="openMyEmpresaAdmin()">⚙️ Administrar mi Empresa</button>
+        <button class="btn-secondary" onclick="logout()">Salir</button>
+      </div>
+    </div>
+    <div class="header">
+      <h1>Tus Clases</h1>
+      <div class="subtitle">Elige una para practicar</div>
+    </div>
+    <div class="clase-grid" id="clase-grid"></div>
+  </div>
+
+  <!-- PANTALLA: HISTORIAL -->
+  <div id="screen-historial" class="hidden">
+    <button class="btn-back" onclick="showScreen('portal')">← Regresar a mis Clases</button>
+    <div class="header">
+      <div class="eyebrow">Tu progreso</div>
+      <h1>Mi historial</h1>
+      <div class="subtitle">Cada técnica marca tu mejor resultado, aunque la hayas repetido varias veces</div>
+    </div>
+    <div id="historial-list"></div>
+  </div>
+
+  <!-- PANTALLA: DETALLE DE CLASE (elige modo → aparecen los 3 pasos abajo) -->
+  <div id="screen-clase" class="hidden">
+    <button class="btn-back" onclick="showScreen('portal')">← Regresar a mis Clases</button>
+    <div class="header">
+      <div class="eyebrow">Clase</div>
+      <h1 id="clase-title">—</h1>
+    </div>
+    <div class="paso-list" id="paso-list"></div>
+    <div class="mode-grid">
+      <div class="mode-card" id="mode-ejercicio" onclick="selectModo('ejercicio')">
+        <div class="mode-icon">🎯</div>
+        <div class="mode-title">Ejercicio</div>
+        <div class="mode-desc">Aísla una sola técnica de la fórmula y practícala a fondo.</div>
+      </div>
+      <div class="mode-card" id="mode-simulador" onclick="selectModo('simulador')">
+        <div class="mode-icon">🎭</div>
+        <div class="mode-title">Simulador</div>
+        <div class="mode-desc">Conversación completa aplicando toda la fórmula, como en la vida real.</div>
+      </div>
+    </div>
+    <div id="practice-config" class="hidden" style="margin-top:1.25rem">
+      <div class="steps-row" id="steps-row"></div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" id="btn-start-practice" onclick="startPractice()" disabled>Comenzar</button>
+    </div>
+  </div>
+
+  <!-- MODAL: selección de cada paso -->
+  <div class="modal-overlay" id="step-modal-overlay" onclick="closeStepModal(event)">
+    <div class="modal-box" id="step-modal-box" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeStepModal()">✕</button>
+      <div class="modal-eyebrow" id="step-modal-eyebrow">—</div>
+      <div id="step-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: explicación/ejemplos de una técnica, o resumen combinado de la Clase -->
+  <div class="modal-overlay" id="info-modal-overlay" onclick="closeInfoModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeInfoModal()">✕</button>
+      <div class="modal-eyebrow" id="info-modal-eyebrow">—</div>
+      <div id="info-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- PANTALLA: CHAT -->
+  <div id="screen-chat" class="hidden">
+    <div class="chat-header-row">
+      <div class="header" style="margin-bottom:0;text-align:left">
+        <div class="eyebrow" id="chat-eyebrow">—</div>
+        <h1 id="chat-title" style="font-size:20px">—</h1>
+      </div>
+      <div class="chat-avatar-recap" id="chat-avatar-recap"></div>
+    </div>
+    <div style="text-align:right;margin-bottom:0.75rem">
+      <button class="btn-cancel-link" onclick="openCancelModal()">✕ Cancelar ejercicio</button>
+    </div>
+    <div class="concept-bar hidden" id="concept-bar"></div>
+    <div class="status-bar">
+      <div class="status-item">Turno <span id="turn-count">0</span>/<span id="turn-max">3</span></div>
+      <div class="status-item">Aciertos <span id="hit-count">0</span>/<span id="hit-max">3</span></div>
+    </div>
+    <div class="chat-box" id="chat-box"></div>
+    <div class="chat-input-row">
+      <input type="text" class="chat-input" id="chat-input" placeholder="Responde al prospecto..." onkeydown="if(event.key==='Enter') sendMessage()">
+      <button class="btn-send" id="btn-send" onclick="sendMessage()">Enviar</button>
+    </div>
+  </div>
+
+  <!-- MODAL: confirmar cancelación del ejercicio -->
+  <div class="modal-overlay" id="cancel-modal-overlay" onclick="closeCancelModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()" style="max-width:400px;text-align:center">
+      <div style="font-size:38px;margin-bottom:8px">⚠️</div>
+      <div style="font-size:17px;font-weight:900;color:#1B3A6B;margin-bottom:8px">¿Cancelar este ejercicio?</div>
+      <div style="font-size:13.5px;color:rgba(51,69,94,0.6);margin-bottom:1.5rem;line-height:1.5">Vas a perder el progreso de esta práctica — no se va a guardar ningún puntaje.</div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-secondary" style="flex:1" onclick="closeCancelModal()">Seguir practicando</button>
+        <button class="btn-primary" style="flex:1;background:#C93A3E" onclick="confirmCancelPractice()">Sí, cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA: RESULTADO -->
+  <div id="screen-result" class="hidden">
+    <div class="result-card">
+      <div class="subtitle">Resultado</div>
+      <div class="result-score" id="result-score">0<span style="font-size:16px"></span></div>
+      <div class="mimo-grid">
+        <div class="mimo-box mantener"><div class="mimo-title" style="color:#2E8B57">✅ Mantener</div><div class="mimo-text" id="mimo-mantener">...</div></div>
+        <div class="mimo-box incorporar"><div class="mimo-title" style="color:#3E6FB0">➕ Incorporar</div><div class="mimo-text" id="mimo-incorporar">...</div></div>
+        <div class="mimo-box modificar"><div class="mimo-title" style="color:#B8860B">✏️ Modificar</div><div class="mimo-text" id="mimo-modificar">...</div></div>
+        <div class="mimo-box omitir"><div class="mimo-title" style="color:#C93A3E">🚫 Omitir</div><div class="mimo-text" id="mimo-omitir">...</div></div>
+      </div>
+      <div class="detalle-respuestas-title">Detalle de tus respuestas</div>
+      <div id="detalle-respuestas" style="text-align:left"></div>
+      <div class="result-actions">
+        <button class="btn-primary" onclick="showScreen('clase')">🔁 Otra práctica</button>
+        <button class="btn-secondary" onclick="showScreen('portal')">📋 Mis Clases</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN: HUB NUWEK (súper admin) -->
+  <div id="screen-admin-hub" class="hidden">
+    <button class="btn-back" onclick="logout()">← Cerrar sesión</button>
+    <div class="header">
+      <div class="eyebrow">Súper admin Nuwek</div>
+      <h1>¿Qué quieres administrar?</h1>
+    </div>
+    <div class="mode-grid">
+      <div class="mode-card" onclick="openAdminEmpresas()">
+        <div class="mode-icon">🏢</div>
+        <div class="mode-title">Empresas</div>
+        <div class="mode-desc">Dar de alta clientes nuevos, su plan de licencias, y su primer admin.</div>
+      </div>
+      <div class="mode-card" onclick="openAdminTecnicas()">
+        <div class="mode-icon">🧩</div>
+        <div class="mode-title">Técnicas y Clases</div>
+        <div class="mode-desc">El contenido — biblioteca compartida entre todas las Empresas.</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:1.5rem">
+      <button class="btn-secondary" id="btn-sync-sheets" onclick="sincronizarTodoConSheets()">🔄 Sincronizar todo con Google Sheets</button>
+      <div id="sync-status" style="font-size:12px;color:rgba(51,69,94,0.55);margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN: LISTA DE EMPRESAS (súper admin) -->
+  <div id="screen-admin-empresas" class="hidden">
+    <button class="btn-back" onclick="showScreen('admin-hub')">← Regresar</button>
+    <div class="header">
+      <div class="eyebrow">Empresas</div>
+      <h1>Clientes Nuwek</h1>
+    </div>
+    <div id="admin-empresas-list" class="paso-list" style="margin-bottom:1.25rem"></div>
+    <button class="btn-primary" style="width:100%" onclick="openEmpresaForm()">+ Nueva Empresa</button>
+  </div>
+
+  <!-- ADMIN: FORM DE EMPRESA NUEVA (súper admin) -->
+  <div id="screen-admin-empresa-form" class="hidden">
+    <button class="btn-back" onclick="showScreen('admin-empresas')">← Regresar</button>
+    <div class="header">
+      <div class="eyebrow">Nueva Empresa</div>
+      <h1>Dar de alta un cliente</h1>
+    </div>
+    <div class="name-card" style="max-width:none">
+      <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Nombre de la Empresa</label>
+      <input type="text" id="ef-nombre" placeholder="Ej. Transportes del Norte">
+      <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Tope de licencias del plan</label>
+      <input type="text" id="ef-max" inputmode="numeric" placeholder="Ej. 5">
+      <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Usuario del primer admin de esta Empresa</label>
+      <input type="text" id="ef-admin-user" placeholder="Ej. admin_norte">
+      <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Contraseña del primer admin</label>
+      <input type="text" id="ef-admin-pass" placeholder="Ej. norte123">
+      <button class="btn-primary" style="width:100%" onclick="saveEmpresaNueva()">Crear Empresa</button>
+    </div>
+  </div>
+
+  <!-- ADMIN: TÉCNICAS Y CLASES (pestañas en la misma pantalla) -->
+  <div id="screen-admin-contenido" class="hidden">
+    <button class="btn-back" onclick="showScreen('admin-hub')">← Regresar</button>
+    <div class="header">
+      <div class="eyebrow">Biblioteca de contenido</div>
+      <h1>Técnicas y Clases</h1>
+    </div>
+    <div class="content-counters" id="content-counters"></div>
+    <div class="content-tabs">
+      <button class="content-tab active" id="ctab-tecnicas" onclick="showContentTab('tecnicas')">🧩 Técnicas</button>
+      <button class="content-tab" id="ctab-clases" onclick="showContentTab('clases')">📚 Clases</button>
+    </div>
+    <div id="content-view-tecnicas">
+      <div id="admin-tecnicas-list" class="paso-list" style="margin-bottom:1.25rem"></div>
+      <button class="btn-primary" style="width:100%" onclick="openTecnicaForm(null)">+ Nueva técnica</button>
+    </div>
+    <div id="content-view-clases" class="hidden">
+      <div id="admin-clases-list" class="paso-list" style="margin-bottom:1.25rem"></div>
+      <button class="btn-primary" style="width:100%" onclick="openClaseForm(null)">+ Nueva Clase</button>
+    </div>
+  </div>
+
+  <!-- ADMIN: FORM DE TÉCNICA (alta / edición) -->
+  <div id="screen-admin-tecnica-form" class="hidden">
+    <button class="btn-back" onclick="backToContenido('tecnicas')">← Regresar</button>
+    <div class="header">
+      <div class="eyebrow" id="tf-eyebrow">Nueva técnica</div>
+      <h1 id="tf-title">—</h1>
+    </div>
+    <div id="tf-duplicate-warning" class="hidden" style="background:rgba(242,201,76,0.15);border-left:4px solid #F2C94C;border-radius:10px;padding:12px 16px;margin-bottom:1rem;font-size:13px"></div>
+    <div class="name-card" style="max-width:none">
+      <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Nombre de la técnica</label>
+      <input type="text" id="tf-nombre" placeholder="Ej. Pausa y pregunta de afirmación" oninput="checkDuplicateTecnica()">
+
+      <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">¿Es ramificada?</label>
+      <div class="diff-options" style="margin-bottom:1rem">
+        <button type="button" class="diff-opt" id="tf-lineal" onclick="setRamificada(false)">Lineal</button>
+        <button type="button" class="diff-opt" id="tf-ramificada" onclick="setRamificada(true)">Ramificada</button>
+      </div>
+
+      <div id="tf-lineal-block">
+        <div class="col-grid">
+          <div class="col-field">
+            <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Frases disparadoras <span class="col-count" id="tf-disparadores-count">(0)</span></label>
+            <div class="col-list" id="tf-disparadores-list"></div>
+            <div class="col-add-row">
+              <input type="text" id="tf-disparador-input" placeholder="Ej. ¿Qué tiene de especial esto?" onkeydown="if(event.key==='Enter'){event.preventDefault();addToList('disparadores');}">
+              <button type="button" class="btn-icon" onclick="addToList('disparadores')">+</button>
+            </div>
+          </div>
+          <div class="col-field">
+            <label style="font-size:12px;font-weight:800;color:#2E8B57;display:block;margin-bottom:6px">Respuestas correctas <span class="col-count" id="tf-correctas-count">(0)</span></label>
+            <div class="col-list" id="tf-correctas-list"></div>
+            <div class="col-add-row">
+              <input type="text" id="tf-correcta-input" placeholder="Ej. Antes de seguir — ¿te hace sentido?" onkeydown="if(event.key==='Enter'){event.preventDefault();addToList('correctas');}">
+              <button type="button" class="btn-icon" onclick="addToList('correctas')">+</button>
+            </div>
+          </div>
+          <div class="col-field">
+            <label style="font-size:12px;font-weight:800;color:#C93A3E;display:block;margin-bottom:6px">Respuestas incorrectas <span class="col-count" id="tf-incorrectas-count">(0)</span></label>
+            <div class="col-list" id="tf-incorrectas-list"></div>
+            <div class="col-add-row">
+              <input type="text" id="tf-incorrecta-input" placeholder="Ej. Bueno pues sigo explicando...">
+              <button type="button" class="btn-icon" onclick="addToList('incorrectas')">+</button>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:11.5px;color:rgba(51,69,94,0.55);margin:-4px 0 1rem">Agrega varias de cada una — mientras más ejemplos, mejor califica la IA. Cada columna crece independiente.</div>
+      </div>
+
+      <div id="tf-ramas-block" class="hidden">
+        <div id="tf-ramas-list"></div>
+        <button type="button" class="btn-secondary" style="margin-bottom:1rem" onclick="addRamaField()">+ Agregar rama</button>
+      </div>
+
+      <button class="btn-primary" style="width:100%" onclick="saveTecnica()">Guardar técnica</button>
+    </div>
+  </div>
+
+  <!-- ADMIN: FORM DE CLASE -->
+  <div id="screen-admin-clase-form" class="hidden">
+    <button class="btn-back" onclick="backToContenido('clases')">← Regresar</button>
+    <div class="header">
+      <div class="eyebrow" id="cf-eyebrow">Nueva Clase</div>
+      <h1 id="cf-title">—</h1>
+    </div>
+    <div class="name-card" style="max-width:none">
+      <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Nombre de la Clase</label>
+      <input type="text" id="cf-nombre" placeholder="Ej. Cierre consultivo">
+      <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Pasos de la fórmula (en orden)</label>
+      <div id="cf-pasos-list"></div>
+      <button type="button" class="btn-secondary" style="margin-bottom:1rem" onclick="addPasoField()">+ Agregar paso</button>
+      <button class="btn-primary" style="width:100%" onclick="saveClase()">Guardar Clase</button>
+    </div>
+  </div>
+
+  <!-- ADMIN: USUARIOS Y LICENCIAS -->
+  <div id="screen-admin-usuarios" class="hidden">
+    <button class="btn-back" onclick="goBackFromUsuarios()">← Regresar</button>
+    <div class="header">
+      <div class="eyebrow" id="au-empresa-nombre">Empresa</div>
+      <h1>Usuarios y Licencias</h1>
+    </div>
+    <div class="name-card" style="max-width:none;margin-bottom:1.25rem">
+      <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Tope de licencias del plan</label>
+      <input type="text" id="au-max" inputmode="numeric">
+      <button class="btn-secondary" onclick="updateMaxUsuarios()">Actualizar tope</button>
+      <div id="au-cap-status" style="font-size:12.5px;color:rgba(51,69,94,0.6);margin-top:10px"></div>
+    </div>
+    <div class="name-card" style="max-width:none;margin-bottom:1.25rem">
+      <label style="font-size:12px;font-weight:800;color:#1B3A6B;display:block;margin-bottom:6px">Invitar usuario nuevo</label>
+      <input type="text" id="au-invite-name" placeholder="Nombre de usuario, ej. carlos">
+      <input type="text" id="au-invite-pass" placeholder="Contraseña temporal, ej. demo123">
+      <button class="btn-primary" style="width:100%" onclick="inviteUsuario()">Invitar</button>
+    </div>
+    <div id="admin-usuarios-list"></div>
+  </div>
+
+</div>
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+// La "inteligencia" (calificación) sigue siendo local. Lo que SÍ sale a internet
+// ahora es la persistencia: contenido, empresas/usuarios y resultados viven en Sheets.
+const GS_URL = 'https://script.google.com/macros/s/AKfycbxLwkfnQGQf1MreQg_phKwxtt_ZZ0-uHFfLXzTA6Pejqi-F2maeU76O7npHd6Rrp57q/exec';
+
+async function gs(action, data) {
+  try {
+    const res = await fetch(GS_URL, { method: 'POST', body: new URLSearchParams({ action, data: JSON.stringify(data || {}) }) });
+    return await res.json();
+  } catch (e) {
+    console.error('Backend Sheets no disponible (' + action + '):', e);
+    return { ok: false, error: String(e) };
+  }
+}
+// Dispara la llamada al backend sin esperarla ni bloquear la UI — si falla, no rompe nada local.
+function gsFireAndForget(action, data) { gs(action, data).catch(()=>{}); }
+
+const LS_NAME = 'nuwek_demo_username';
+const LS_PROGRESS = 'nuwek_demo_progreso';
+
+// ── CONTENIDO INVENTADO (esto en producción vive en Supabase) ──────────────
+// Nota: la técnica "avanza_explora_redefine" se reutiliza en 2 Clases distintas —
+// a propósito, para probar el modelo de biblioteca reutilizable.
+const DEFAULT_TECNICAS = {
+  caracteristica_beneficio: {
+    id:'caracteristica_beneficio', nombre:'De característica a beneficio', ramificada:false,
+    disparadores:['¿Qué tiene de especial lo que ofreces?'],
+    correctas:['No solo tiene [característica], eso significa que tú vas a poder [beneficio concreto para el cliente].'],
+    incorrectas:['Tiene muchas características muy buenas, es lo mejor del mercado.'],
+  },
+  pausa_afirmacion: {
+    id:'pausa_afirmacion', nombre:'Pausa y pregunta de afirmación', ramificada:false,
+    disparadores:['Suena interesante, cuéntame más.'],
+    correctas:['Antes de seguir — ¿hasta aquí tiene sentido lo que te comento?'],
+    incorrectas:['Bueno pues sigo explicando entonces...'],
+  },
+  avanza_explora_redefine: {
+    id:'avanza_explora_redefine', nombre:'Avanzar, Explorar o Redefinir', ramificada:true,
+    ramas: {
+      si: { label:'Dijo que sí', correcto:'Alegrar, confirmar lo dicho, y avanzar hacia el siguiente paso sin rodeos.' },
+      no: { label:'Dijo que no', correcto:'Usar palabras de entendimiento (no de defensa) y explorar con preguntas abiertas por qué lo dice.' },
+      ambiguo: { label:'Fue ambiguo', correcto:'Hacer un silencio breve, y preguntar directamente qué está pasando o qué es lo que no se está diciendo.' },
+    },
+  },
+  validar_sin_ceder: {
+    id:'validar_sin_ceder', nombre:'Validar sin ceder', ramificada:false,
+    disparadores:['La verdad no sé si esto realmente funcione para mí.'],
+    correctas:['Entiendo la duda, tiene sentido que lo pienses así.'],
+    incorrectas:['No, sí funciona, créeme.'],
+  },
+  explorar_raiz: {
+    id:'explorar_raiz', nombre:'Explorar la raíz', ramificada:false,
+    disparadores:['Ya antes he tenido malas experiencias con proveedores parecidos.'],
+    correctas:['¿Qué fue exactamente lo que pasó la última vez? Cuéntame más.'],
+    incorrectas:['Bueno, nosotros somos distintos.'],
+  },
+  pregunta_ab_cierre: {
+    id:'pregunta_ab_cierre', nombre:'Pregunta A/B de cierre', ramificada:false,
+    disparadores:['Mmm, déjame pensarlo.'],
+    correctas:['¿Te hace sentido avanzar, o hay algo puntual que te detenga?'],
+    incorrectas:['Ok, avísame cualquier cosa.'],
+  },
+};
+
+const DEFAULT_CLASES = [
+  { id:'ritmo', nombre:'Ritmo de la negociación',
+    pasos:[
+      { orden:1, tecnicaId:'caracteristica_beneficio' },
+      { orden:2, tecnicaId:'pausa_afirmacion' },
+      { orden:3, tecnicaId:'avanza_explora_redefine' },
+    ]},
+  { id:'objeciones', nombre:'Manejo de objeciones',
+    pasos:[
+      { orden:1, tecnicaId:'validar_sin_ceder' },
+      { orden:2, tecnicaId:'explorar_raiz' },
+      { orden:3, tecnicaId:'avanza_explora_redefine' },
+      { orden:4, tecnicaId:'pregunta_ab_cierre' },
+    ]},
+];
+
+// ── Contenido editable — vive en localStorage, se inicializa con los defaults arriba ──
+const LS_CONTENT = 'nuwek_demo_contenido';
+let TECNICAS = {};
+let CLASES = [];
+
+function loadContent() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_CONTENT));
+    if (saved && saved.tecnicas && saved.clases) {
+      TECNICAS = saved.tecnicas;
+      CLASES = saved.clases;
+      migrateTecnicas();
+      return;
+    }
+  } catch(e) {}
+  TECNICAS = JSON.parse(JSON.stringify(DEFAULT_TECNICAS));
+  CLASES = JSON.parse(JSON.stringify(DEFAULT_CLASES));
+  migrateTecnicas();
+}
+function saveContent() {
+  localStorage.setItem(LS_CONTENT, JSON.stringify({ tecnicas: TECNICAS, clases: CLASES }));
+}
+// Actualiza técnicas guardadas con el formato viejo (disparador singular) al formato nuevo (disparadores en lista)
+function migrateTecnicas() {
+  let changed = false;
+  Object.values(TECNICAS).forEach(t => {
+    if (!t.ramificada) {
+      if (!Array.isArray(t.disparadores)) {
+        t.disparadores = t.disparador ? [t.disparador] : [];
+        delete t.disparador;
+        changed = true;
+      }
+      if (!Array.isArray(t.correctas)) { t.correctas = []; changed = true; }
+      if (!Array.isArray(t.incorrectas)) { t.incorrectas = []; changed = true; }
+    }
+  });
+  if (seedCaracteristicaBeneficio()) changed = true;
+  if (patchCaracteristicaBeneficioExtras()) changed = true;
+  if (patchVocabularioCaracteristicaBeneficio()) changed = true;
+  if (patchFrasesCompletasCaracteristicaBeneficio()) changed = true;
+  if (patchFixIncorrectaColision()) changed = true;
+  if (changed) saveContent();
+}
+
+// Corrige el ejemplo incorrecto que usaba "tiene" — chocaba con la palabra que sí clasificamos como válida
+function patchFixIncorrectaColision() {
+  let changed = false;
+  const fixes = [
+    { tecnicaId:'ident_caracteristica', old:'Tiene de todo, ya lo verás.', nuevo:'Viene con muchas cosas incluidas, ya lo notarás.' },
+    { tecnicaId:'traducir_valor', old:'Eso lo tienen casi todas las pólizas.', nuevo:'Lo tienen casi todas las otras marcas.' },
+  ];
+  fixes.forEach(f => {
+    const t = TECNICAS[f.tecnicaId];
+    if (!t || !Array.isArray(t.incorrectas)) return;
+    const idx = t.incorrectas.indexOf(f.old);
+    if (idx < 0) return;
+    t.incorrectas[idx] = f.nuevo;
+    changed = true;
+  });
+  return changed;
+}
+
+// Agrega palabras/frases sueltas como "correctas" — idempotente, nunca duplica
+function mergeCorrectas(tecnicaId, nuevas) {
+  const t = TECNICAS[tecnicaId];
+  if (!t) return false;
+  if (!Array.isArray(t.correctas)) t.correctas = [];
+  let changed = false;
+  nuevas.forEach(w => {
+    if (!t.correctas.includes(w)) { t.correctas.push(w); changed = true; }
+  });
+  return changed;
+}
+
+// Vocabulario aportado y clasificado — 18 ago 2026
+function patchVocabularioCaracteristicaBeneficio() {
+  let changed = false;
+  if (mergeCorrectas('ident_caracteristica', [
+    'Incluye','Tiene','Trae','Contiene','Es','Mide','Pesa','Aguanta','Sabe','Soporta',
+    'Fue diseñada','Fue creada','Fue pensada','Se inspiró','Desarrolla','Ayuda','Sirve','Funciona','Aporta','Sugiere','Te explico',
+    'Cabe','Ofrecemos','Mantiene','Capacidad',
+  ])) changed = true;
+  if (mergeCorrectas('traducir_valor', [
+    'Con eso','Por eso','Es así que','Eso significa','Es decir','Por ello','Como consecuencia','Como resultado','Justificando',
+    'Significa','Con esto','Esto significa','Lograrás','Mejorarás','Conseguirás',
+  ])) changed = true;
+  if (mergeCorrectas('nombrar_beneficio', [
+    'Ganarás','Lograrás','Obtendrás','Evitarás','Generarás','No habrá','No tendrás','No será una molestia',
+    'Te sentirás','No te sentirás','Superarás','Alcanzarás','Aprenderás','Crecerás','Formalizarás','Profesionalizarás',
+    'Adquirirás','No dependerás','Despertarás','Aterrizarás','Dirás','Te expresarás','Transformarás','Crearás',
+    'Desempeñarás','No juzgarás','Conocerás','Construirás','Controlarás','Será más claro','Establecerás','Tendrás','Amarás','Oficializarás',
+    'Perfilarás','Lo que más me gusta',
+  ])) changed = true;
+  if (mergeCorrectas('conectar_necesidad', [
+    'Es justo por eso','Es así','Justo','Precisamente','Exactamente','Efectivamente','Evidentemente',
+    'Esa es la razón por la cual','Es por ello','Es justo','Con base en','Por eso mismo',
+  ])) changed = true;
+  return changed;
+}
+
+// Oraciones completas nuevas — para que el modal de teoría siempre tenga varias frases
+// completas que sí se dicen, no solo palabras sueltas de conexión.
+function patchFrasesCompletasCaracteristicaBeneficio() {
+  let changed = false;
+  if (mergeCorrectas('ident_caracteristica', [
+    'Esta unidad incluye financiamiento propio de la marca, sin pasar por un banco externo.',
+    'El sistema integra inventario, ventas y contabilidad en un solo lugar.',
+    'Este material tiene garantía estructural de 20 años.',
+  ])) changed = true;
+  if (mergeCorrectas('traducir_valor', [
+    'Eso significa que no vas a tener que rentar espacio aparte para guardar tus cosas.',
+    'Con esto, ya no dependes de que un banco externo te apruebe el crédito.',
+    'Eso significa que tu equipo puede operarlo desde el primer día, sin curva de aprendizaje larga.',
+  ])) changed = true;
+  if (mergeCorrectas('nombrar_beneficio', [
+    'Ganas semanas de operación que antes perdías esperando la aprobación de un crédito.',
+    'Reduces muchísimo el riesgo de que un ataque tumbe tu operación por completo.',
+    'Te ahorras un gasto de mantenimiento que muchas otras obras sí terminan pagando.',
+  ])) changed = true;
+  if (mergeCorrectas('conectar_necesidad', [
+    'Precisamente por eso te lo menciono, porque me dijiste que ya perdiste un contrato por no tener unidad disponible a tiempo.',
+    'Exactamente por eso es relevante para ti, ya que me comentaste que su cierre de mes les toma casi una semana.',
+    'Es justo por eso que te lo explico, porque me dijiste que su equipo anterior estuvo meses sin usarse por falta de capacitación.',
+  ])) changed = true;
+  return changed;
+}
+
+// Siembra la Clase "Característica → Beneficio" (4 técnicas lineales) si todavía no existe
+// 15 ejemplos combinados, industrias distintas — para el modal "R" con flechas
+const RESUMEN_CARACTERISTICA_BENEFICIO = [
+  { industria:'Seguros de vida', texto:'"Este seguro incluye cobertura por invalidez total y permanente [característica] — eso significa que si llegaras a tener un accidente que te impida trabajar, ya no dependes solo de tus ahorros [traducción de valor] — obtienes tranquilidad financiera para tu familia incluso si tú no puedes generar ingreso [beneficio] — y por eso es tan importante para ti, porque tus hijos seguirían con ese ingreso asegurado [conexión con tu necesidad]."' },
+  { industria:'Camiones comerciales', texto:'"Esta unidad trae financiamiento propio de la marca [característica] — eso significa que no dependes de que un banco externo te apruebe el crédito [traducción de valor] — puedes tener tu camión trabajando semanas antes de lo que esperabas [beneficio] — y como me dijiste que ya perdiste un contrato por no tener unidad disponible a tiempo, esto resuelve justo ese problema [conexión con tu necesidad]."' },
+  { industria:'Software B2B (CRM)', texto:'"Nuestro CRM sincroniza automáticamente cada mensaje de WhatsApp con el expediente del cliente [característica] — eso significa que ningún vendedor tiene que copiar y pegar información a mano [traducción de valor] — le devuelves horas a tu equipo cada semana que hoy se van en captura manual [beneficio] — y como me comentaste que tu equipo se queja de hacer doble trabajo, esto ataca justo esa fricción [conexión con tu necesidad]."' },
+  { industria:'Bienes raíces', texto:'"Este departamento incluye bodega y dos cajones de estacionamiento techados [característica] — eso significa que no vas a tener que rentar espacio aparte para guardar tus cosas [traducción de valor] — te ahorras un gasto mensual que muchos vecinos sí están pagando [beneficio] — y como me dijiste que traes dos coches y poco espacio en tu casa actual, esto resuelve exactamente eso [conexión con tu necesidad]."' },
+  { industria:'Muebles de oficina', texto:'"Estos escritorios son ajustables en altura, para trabajar sentado o de pie [característica] — eso significa que tu equipo puede cambiar de postura sin levantarse de su lugar [traducción de valor] — reduces las molestias de espalda que hoy generan ausencias y bajas de productividad [beneficio] — y como me comentaste que ya tuvieron casos de incapacidad por eso, este mueble ataca justo ese riesgo [conexión con tu necesidad]."' },
+  { industria:'Telecom / Internet empresarial', texto:'"Este plan incluye un enlace dedicado, no compartido con otros clientes [característica] — eso significa que tu velocidad no baja aunque tus vecinos de edificio estén conectados [traducción de valor] — tus videollamadas y sistemas en la nube dejan de trabarse en horas pico [beneficio] — y como me dijiste que las juntas con clientes se les congelan seguido, esto resuelve justo eso [conexión con tu necesidad]."' },
+  { industria:'ERP / Sistemas administrativos', texto:'"Este sistema integra inventario, ventas y contabilidad en un solo lugar [característica] — eso significa que ya no capturas la misma información tres veces en tres sistemas distintos [traducción de valor] — le devuelves tiempo a tu equipo administrativo y reduces errores de captura [beneficio] — y como me dijiste que su cierre de mes les toma casi una semana, esto se los puede acortar bastante [conexión con tu necesidad]."' },
+  { industria:'Capacitación corporativa', texto:'"Este programa incluye simulaciones con IA donde cada vendedor practica las veces que necesite [característica] — eso significa que no dependen de que un coach esté disponible en vivo para practicar [traducción de valor] — tu equipo llega a la calle ya habiendo cometido sus errores en un ambiente seguro, no con el cliente real [beneficio] — y como me dijiste que tu rotación de vendedores nuevos es alta, esto acorta la curva de aprendizaje antes de que se vayan [conexión con tu necesidad]."' },
+  { industria:'Maquinaria industrial', texto:'"Este equipo tiene mantenimiento preventivo programado incluido el primer año [característica] — eso significa que no vas a tener que estar cotizando técnicos por tu cuenta cada vez [traducción de valor] — reduces el riesgo de que la máquina se pare justo en temporada alta [beneficio] — y como me comentaste que el año pasado perdieron producción por una falla no atendida a tiempo, esto ataca justo ese riesgo [conexión con tu necesidad]."' },
+  { industria:'Servicios financieros / Créditos', texto:'"Este crédito tiene tasa fija durante todo el plazo [característica] — eso significa que tu pago mensual no va a cambiar aunque suban las tasas del mercado [traducción de valor] — puedes planear tu flujo de efectivo sin sorpresas los próximos años [beneficio] — y como me dijiste que ya te tocó un ajuste de tasa que te desordenó el presupuesto, esto evita que se repita [conexión con tu necesidad]."' },
+  { industria:'Marketing digital', texto:'"Este paquete incluye un reporte semanal con el costo real por cliente obtenido [característica] — eso significa que vas a saber exactamente qué campañas sí están funcionando y cuáles no [traducción de valor] — dejas de gastar en anuncios que no te están regresando nada [beneficio] — y como me dijiste que hoy no sabes bien en qué se te va el presupuesto de marketing, esto te da esa claridad [conexión con tu necesidad]."' },
+  { industria:'Equipos médicos', texto:'"Este equipo viene con capacitación certificada para todo tu personal [característica] — eso significa que tu equipo puede operarlo desde el primer día sin curva de aprendizaje larga [traducción de valor] — evitas tiempos muertos del equipo por falta de personal capacitado [beneficio] — y como me comentaste que su equipo anterior estuvo meses sin usarse por eso, esta vez no les va a pasar [conexión con tu necesidad]."' },
+  { industria:'Construcción / Materiales', texto:'"Este material trae garantía estructural de 20 años [característica] — eso significa que no vas a tener que preocuparte por reparaciones mayores en ese tiempo [traducción de valor] — te ahorras un gasto de mantenimiento que muchas otras obras sí terminan pagando [beneficio] — y como me dijiste que buscas algo que no te dé problemas en unos años, esto es justo pensando en eso [conexión con tu necesidad]."' },
+  { industria:'Energía solar', texto:'"Este sistema genera el excedente que se acredita directo en tu recibo de luz [característica] — eso significa que los meses de más consumo se compensan con los de menos [traducción de valor] — terminas pagando una fracción de lo que pagas hoy en electricidad [beneficio] — y como me dijiste que tu recibo se disparó este verano, esto ataca justo ese golpe a tu bolsillo [conexión con tu necesidad]."' },
+  { industria:'Ciberseguridad', texto:'"Este servicio monitorea tu red las 24 horas, todos los días del año [característica] — eso significa que un ataque se detecta en minutos, no días después [traducción de valor] — reduces muchísimo el riesgo de que un ataque te tumbe la operación por completo [beneficio] — y como me contaste que ya tuvieron un incidente el año pasado, esto es exactamente para que no se repita [conexión con tu necesidad]."' },
+];
+
+function seedCaracteristicaBeneficio() {
+  if (CLASES.some(c => c.id === 'caracteristica_beneficio_clase')) return false;
+
+  const nuevasTecnicas = {
+    ident_caracteristica: {
+      id:'ident_caracteristica', nombre:'Identificar la característica', ramificada:false,
+      explicacion:'¿Qué tiene, incluye, hace o permite el producto o servicio? Nombra algo concreto y verificable — no un adjetivo vago como "muy bueno".',
+      disparadores:['¿Qué es lo que incluye este plan?', 'Cuéntame más de lo que ofrecen.'],
+      correctas:['Este seguro incluye cobertura por invalidez total y permanente.', 'Trae asistencia médica las 24 horas, todos los días del año.'],
+      incorrectas:['Es un producto muy completo y bueno.', 'Tiene de todo, ya lo verás.'],
+    },
+    traducir_valor: {
+      id:'traducir_valor', nombre:'Traducir a valor', ramificada:false,
+      explicacion:'¿Y eso qué cambia para el cliente? Es el puente entre la característica fría y algo que le importa a esta persona en su día a día.',
+      disparadores:['Me dijiste que tiene esa cobertura, ¿y eso qué cambia?', 'Ok, ¿y eso qué significa para mí?'],
+      correctas:['Eso significa que, si llegaras a tener un accidente que te impida trabajar, ya no dependes solo de tus ahorros.', 'Con eso, cualquier gasto médico grande deja de ser algo que tengas que resolver solo.'],
+      incorrectas:['Pues es una característica muy importante del producto.', 'Eso lo tienen casi todas las pólizas.'],
+    },
+    nombrar_beneficio: {
+      id:'nombrar_beneficio', nombre:'Nombrar el beneficio', ramificada:false,
+      explicacion:'¿Qué obtiene, resuelve, mejora, facilita, evita o consigue el cliente? Aterriza la traducción de valor en un resultado concreto y nombrable.',
+      disparadores:['¿Y entonces qué gano yo con eso?', '¿Cuál es el beneficio real para mí?'],
+      correctas:['Obtienes tranquilidad financiera para tu familia incluso si tú no puedes generar ingreso.', 'Te evitas que un imprevisto médico se convierta también en un imprevisto económico.'],
+      incorrectas:['Es un beneficio que a todos les gusta.', 'Pues muchos beneficios, la verdad.'],
+    },
+    conectar_necesidad: {
+      id:'conectar_necesidad', nombre:'Conectar con la necesidad', ramificada:false,
+      explicacion:'¿Por qué ese beneficio es importante para ESTE cliente en particular? Aquí es donde deja de sonar genérico y se vuelve personal, usando algo que el cliente ya compartió.',
+      disparadores:['Yo tengo dos hijos y soy el único que trabaja en casa.', 'Ando preocupado porque si algo me pasa, no sé qué haría mi familia.'],
+      correctas:['Por eso mismo es tan importante para ti — si algo te llegara a pasar, tus hijos seguirían con ese ingreso asegurado.', 'Justo pensando en eso te lo comento, porque tu familia dependería de esa cobertura en un momento así.'],
+      incorrectas:['Bueno, a todos les conviene tener esto.', 'Es una buena decisión para cualquier persona.'],
+    },
+  };
+  Object.assign(TECNICAS, nuevasTecnicas);
+
+  CLASES.push({
+    id:'caracteristica_beneficio_clase', nombre:'Característica → Beneficio',
+    resumenEjemplos: RESUMEN_CARACTERISTICA_BENEFICIO,
+    pasos:[
+      { orden:1, tecnicaId:'ident_caracteristica' },
+      { orden:2, tecnicaId:'traducir_valor' },
+      { orden:3, tecnicaId:'nombrar_beneficio' },
+      { orden:4, tecnicaId:'conectar_necesidad' },
+    ],
+  });
+  return true;
+}
+
+// Si ya tenías esta Clase guardada de antes (sin explicación/resumen), se los agrega sin duplicar nada
+function patchCaracteristicaBeneficioExtras() {
+  let changed = false;
+  const explicaciones = {
+    ident_caracteristica: '¿Qué tiene, incluye, hace o permite el producto o servicio? Nombra algo concreto y verificable — no un adjetivo vago como "muy bueno".',
+    traducir_valor: '¿Y eso qué cambia para el cliente? Es el puente entre la característica fría y algo que le importa a esta persona en su día a día.',
+    nombrar_beneficio: '¿Qué obtiene, resuelve, mejora, facilita, evita o consigue el cliente? Aterriza la traducción de valor en un resultado concreto y nombrable.',
+    conectar_necesidad: '¿Por qué ese beneficio es importante para ESTE cliente en particular? Aquí es donde deja de sonar genérico y se vuelve personal, usando algo que el cliente ya compartió.',
+  };
+  Object.entries(explicaciones).forEach(([id, texto]) => {
+    if (TECNICAS[id] && !TECNICAS[id].explicacion) { TECNICAS[id].explicacion = texto; changed = true; }
+  });
+  const clase = CLASES.find(c => c.id === 'caracteristica_beneficio_clase');
+  if (clase && (!clase.resumenEjemplos || clase.resumenEjemplos.length < 15 || typeof clase.resumenEjemplos[0] === 'string')) {
+    clase.resumenEjemplos = RESUMEN_CARACTERISTICA_BENEFICIO;
+    delete clase.resumen; // ya no se usa el campo viejo de un solo ejemplo
+    changed = true;
+  }
+  return changed;
+}
+
+function slugify(s) {
+  return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'') || ('id_'+Date.now());
+}
+
+const INDUSTRIAS = [
+  '🚛 Camiones comerciales', '💻 Software B2B (CRM)', '🛡️ Seguros de vida', '🏠 Bienes raíces', '🪑 Muebles de oficina',
+  '📡 Telecom / Internet empresarial', '🗂️ ERP / Sistemas administrativos', '🎓 Capacitación corporativa', '⚙️ Maquinaria industrial',
+  '💳 Servicios financieros / Créditos', '📈 Marketing digital', '🩺 Equipos médicos', '🧱 Construcción / Materiales', '☀️ Energía solar',
+  '🔒 Ciberseguridad', '🚗 Automotriz', '✈️ Turismo y viajes', '📚 Educación', '🍔 Restaurantes y franquicias', '🛍️ Retail / Tiendas',
+  '📦 Logística y paquetería', '👗 Moda y textil', '💄 Belleza y cosméticos', '🏋️ Fitness / Gimnasios', '🌾 Agroindustria',
+  '💊 Farmacéutica', '⚖️ Legal / Despachos jurídicos', '🧑‍🤝‍🧑 Recursos Humanos', '📊 Consultoría empresarial', '🛒 E-commerce',
+  '🏭 Manufactura', '🛎️ Hotelería', '🦺 Seguridad industrial y capacitación',
+];
+
+const AVATARS = [
+  { id:'a1', nombre:'Andrea Morales', gender:'mujer' },
+  { id:'a2', nombre:'Roberto Salas', gender:'hombre' },
+  { id:'a3', nombre:'Lucía Fernández', gender:'mujer' },
+  { id:'a4', nombre:'Jorge Iturbe', gender:'hombre' },
+];
+
+// Solo para Ejercicio — 6 tipos de cliente universales, los que cualquier industria enfrenta a diario.
+// Sin industria ni perillas de dificultad: aquí lo que importa es aislar la técnica, no simular todo el contexto.
+const AVATARS_ESTANDAR = [
+  { id:'std_indeciso', nombre:'El Indeciso', icono:'🤔', desc:'Le cuesta decidir, compara todo, pide tiempo para pensarlo con calma.' },
+  { id:'std_desconfiado', nombre:'El Desconfiado', icono:'🛡️', desc:'Duda de todo lo que le dicen, pide pruebas, garantías y referencias.' },
+  { id:'std_apurado', nombre:'El Apurado', icono:'⏱️', desc:'Quiere resolver rápido, no tiene tiempo para explicaciones largas.' },
+  { id:'std_ahorrador', nombre:'El Ahorrador', icono:'💰', desc:'Todo lo evalúa por precio, siempre busca la opción más barata.' },
+  { id:'std_sabelotodo', nombre:'El Sabelotodo', icono:'🧠', desc:'Cree que ya conoce el producto mejor que tú, cuestiona cada dato.' },
+  { id:'std_callado', nombre:'El Callado', icono:'🤐', desc:'Da respuestas cortas, cuesta sacarle información y contexto.' },
+];
+
+const DIFF_OPTS = [{k:'poco',l:'Poco'},{k:'medio',l:'Normal'},{k:'mucho',l:'Mucho'}];
+
+// Misma lógica de siempre: 7 intentos máximo, necesitas 4 aciertos.
+// Entre menos turnos fallados antes de llegar a 4, más puntos por acierto.
+const EJ_MAX_TURNS = 7;
+const EJ_NEEDED_HITS = 4;
+const POINTS_TABLE = { 0:50, 1:40, 2:30, 3:20 };
+
+const CONOCIMIENTO_DESC = {
+  poco: 'No conoce mucho del tema — hay que explicarle todo con calma, sin dar por hecho que entiende tecnicismos.',
+  medio: 'Tiene un conocimiento básico — entiende lo común, pero no es experto.',
+  mucho: 'Conoce muy bien el tema — compara especificaciones y detalles técnicos con soltura.',
+};
+const PLATICA_DESC_DEMO = {
+  poco: 'Es parco: respuestas cortas y secas, cuesta sacarle información.',
+  medio: 'Responde con una cantidad moderada de información.',
+  mucho: 'Se expresa con muchas palabras, da contexto extra sin que se lo pidan.',
+};
+const OBJETA_DESC_DEMO = {
+  poco: 'Casi no objeta, coopera con facilidad.',
+  medio: 'Ocasionalmente pone alguna objeción o duda.',
+  mucho: 'Objeta seguido — cuestiona precio, compara con la competencia, duda antes de responder.',
+};
+
+// ── ESTADO ──────────────────────────────────────────────────────────────────
+// ── Empresas (multi-cliente) / usuarios / licencias / asignaciones ─────────
+const LS_EMPRESAS = 'nuwek_demo_empresas';
+const SUPER_ADMIN = { nombre:'nuwekonline', password:'Bunny880821*' };
+let EMPRESAS = {};
+let session = null; // { rol:'super_admin_nuwek'|'admin_empresa'|'vendedor', empresaId, nombre }
+let currentAdminEmpresaId = null; // qué Empresa se está viendo en la pantalla de Usuarios y Licencias
+
+function loadEmpresas() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_EMPRESAS));
+    if (saved) { EMPRESAS = saved; return; }
+  } catch(e) {}
+  // Datos de demo — 2 Empresas ya cargadas para poder probar de inmediato
+  EMPRESAS = {
+    faw: { nombre:'FAW', maxUsuarios:5, usuarios:[
+      { nombre:'admin_faw', password:'faw123', rol:'admin_empresa', activo:true },
+      { nombre:'ana', password:'demo123', rol:'vendedor', activo:true },
+      { nombre:'beto', password:'demo123', rol:'vendedor', activo:true },
+    ], asignaciones:{ ana:['ritmo','objeciones'], beto:['ritmo'] } },
+    acme: { nombre:'Acme Software', maxUsuarios:3, usuarios:[
+      { nombre:'admin_acme', password:'acme123', rol:'admin_empresa', activo:true },
+      { nombre:'carla', password:'demo123', rol:'vendedor', activo:true },
+    ], asignaciones:{ carla:['objeciones'] } },
+  };
+  saveEmpresas();
+}
+function saveEmpresas() { localStorage.setItem(LS_EMPRESAS, JSON.stringify(EMPRESAS)); }
+
+function renderLoginHelp() {
+  // Ya no es demo — no se muestran credenciales en la pantalla de login.
+  const el = document.getElementById('login-help');
+  if (el) el.innerHTML = '';
+}
+
+function login() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  if (!u || !p) return;
+
+  if (u === SUPER_ADMIN.nombre && p === SUPER_ADMIN.password) {
+    session = { rol:'super_admin_nuwek', empresaId:null, nombre:u };
+    showScreen('admin-hub');
+    return;
+  }
+  for (const [empresaId, emp] of Object.entries(EMPRESAS)) {
+    const usr = emp.usuarios.find(x => x.nombre === u && x.password === p);
+    if (usr) {
+      if (!usr.activo) { alert('Este usuario está inactivo — contacta a tu admin de Empresa.'); return; }
+      session = { rol: usr.rol, empresaId, nombre: u };
+      userName = u;
+      const prog = loadProgress();
+      if (!prog[userName]) { prog[userName] = {}; saveProgress(prog); }
+      document.getElementById('portal-eyebrow').textContent = `Hola, ${u} · ${emp.nombre}`;
+      document.getElementById('btn-portal-admin').classList.toggle('hidden', session.rol !== 'admin_empresa');
+      renderPortal();
+      showScreen('portal');
+      return;
+    }
+  }
+  alert('Usuario o contraseña incorrectos. Revisa las credenciales de prueba debajo del formulario.');
+}
+
+function logout() {
+  session = null; userName = '';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  showScreen('name');
+}
+
+function openMyEmpresaAdmin() {
+  currentAdminEmpresaId = session.empresaId;
+  openAdminUsuarios();
+}
+
+function goBackFromUsuarios() {
+  if (session.rol === 'super_admin_nuwek') showScreen('admin-empresas');
+  else showScreen('portal');
+}
+
+let userName = '';
+let ctx = {}; // contexto de la práctica en curso
+
+function showScreen(id) {
+  ['name','portal','clase','chat','result','historial','admin-hub','admin-empresas','admin-empresa-form','admin-contenido','admin-tecnica-form','admin-clase-form','admin-usuarios'].forEach(s => document.getElementById('screen-'+s).classList.toggle('hidden', s!==id));
+  window.scrollTo(0,0);
+}
+
+function loadProgress() {
+  try { return JSON.parse(localStorage.getItem(LS_PROGRESS)) || {}; } catch(e) { return {}; }
+}
+function saveProgress(p) { localStorage.setItem(LS_PROGRESS, JSON.stringify(p)); }
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadContent();
+  loadEmpresas();
+  renderLoginHelp();
+});
+
+// ── PORTAL (dashboard) ───────────────────────────────────────────────────────
+function renderPortal() {
+  const prog = loadProgress()[userName] || {};
+  const emp = EMPRESAS[session.empresaId];
+  const asignadas = emp.asignaciones[userName] || [];
+  const clasesVisibles = CLASES.filter(c => asignadas.includes(c.id));
+  if (!clasesVisibles.length) {
+    document.getElementById('clase-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:rgba(51,69,94,0.5)">Todavía no tienes Clases asignadas — pídele a tu admin que te asigne alguna.</div>';
+    return;
+  }
+  document.getElementById('clase-grid').innerHTML = clasesVisibles.map(c => {
+    const cp = prog[c.id] || { ejercicios:[], simuladores:[] };
+    const intentos = cp.ejercicios.length + cp.simuladores.length;
+
+    // Puntaje de la Clase = suma del MEJOR resultado logrado en cada técnica (0 si no la has intentado),
+    // contra el máximo posible (200 pts por técnica = el tope de un Ejercicio). No es un promedio.
+    const maxPorTecnica = EJ_NEEDED_HITS * POINTS_TABLE[0]; // 4 aciertos x 50 pts = 200
+    let sumaMejores = 0;
+    c.pasos.forEach(p => {
+      const intentosTecnica = cp.ejercicios.filter(e => e.tecnicaId === p.tecnicaId);
+      const mejor = intentosTecnica.length ? Math.max(...intentosTecnica.map(e=>e.score)) : 0;
+      sumaMejores += mejor;
+    });
+    const maxPosible = c.pasos.length * maxPorTecnica;
+    const pct = maxPosible ? Math.round((sumaMejores / maxPosible) * 100) : 0;
+
+    return `<div class="clase-card" onclick="openClase('${c.id}')">
+      <div class="clase-name">${c.nombre}</div>
+      <div class="clase-pasos">${c.pasos.length} pasos en la fórmula</div>
+      <div class="clase-progress-bar"><div class="clase-progress-fill" style="width:${Math.min(pct,100)}%"></div></div>
+      <div class="clase-stats"><span>${intentos} intento${intentos===1?'':'s'}</span><span>${sumaMejores} / ${maxPosible} pts</span></div>
+    </div>`;
+  }).join('');
+}
+
+function openHistorial() {
+  const prog = loadProgress()[userName] || {};
+  let rows = [];
+  Object.entries(prog).forEach(([claseId, data]) => {
+    const clase = CLASES.find(c=>c.id===claseId);
+    const claseNombre = clase ? clase.nombre : claseId;
+    (data.ejercicios||[]).forEach(e => rows.push({
+      claseNombre,
+      tecnicaNombre: e.tecnicaId && TECNICAS[e.tecnicaId] ? TECNICAS[e.tecnicaId].nombre : null,
+      modo:'Ejercicio', icono:'🎯', score:e.score, ts:e.ts,
+    }));
+    (data.simuladores||[]).forEach(e => rows.push({
+      claseNombre, tecnicaNombre:null, modo:'Simulador', icono:'🎭', score:e.score, ts:e.ts,
+    }));
+  });
+
+  // Mejor resultado por Clase+Técnica+Modo — solo tiene sentido marcarlo si hubo más de 1 intento
+  const bestMap = {};
+  const countMap = {};
+  rows.forEach(r => {
+    const key = r.claseNombre + '|' + (r.tecnicaNombre||'') + '|' + r.modo;
+    countMap[key] = (countMap[key] || 0) + 1;
+    if (bestMap[key] === undefined || r.score > bestMap[key]) bestMap[key] = r.score;
+  });
+
+  rows.sort((a,b) => b.ts - a.ts);
+
+  document.getElementById('historial-list').innerHTML = rows.length ? rows.map(r => {
+    const key = r.claseNombre + '|' + (r.tecnicaNombre||'') + '|' + r.modo;
+    const esMejor = countMap[key] >= 2 && r.score === bestMap[key];
+    const fecha = new Date(r.ts).toLocaleString('es-MX', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    return `<div class="historial-item ${esMejor?'best':''}">
+      <div class="historial-item-top">
+        <div class="historial-item-title">${r.icono} ${r.tecnicaNombre || r.modo + ' completo'}</div>
+        ${esMejor ? '<span class="historial-badge">🏆 Mejor resultado</span>' : ''}
+      </div>
+      <div class="historial-item-sub">${r.claseNombre} · ${r.modo} · ${fecha}</div>
+      <div class="historial-item-score">${r.score} pts</div>
+    </div>`;
+  }).join('') : '<div style="text-align:center;padding:2.5rem;color:rgba(51,69,94,0.5)">Todavía no has hecho ningún ejercicio.</div>';
+
+  showScreen('historial');
+}
+
+// ── DETALLE DE CLASE ─────────────────────────────────────────────────────────
+function statsPorTecnica(claseId, tecnicaId) {
+  const prog = loadProgress()[userName] || {};
+  const cp = prog[claseId] || { ejercicios:[] };
+  const intentos = cp.ejercicios.filter(e => e.tecnicaId === tecnicaId);
+  if (!intentos.length) return null;
+  const mejor = Math.max(...intentos.map(e=>e.score));
+  const promedio = Math.round(intentos.reduce((a,b)=>a+b.score,0) / intentos.length);
+  return { count: intentos.length, mejor, promedio };
+}
+
+function openClase(claseId) {
+  ctx = { claseId };
+  const clase = CLASES.find(c=>c.id===claseId);
+  document.getElementById('clase-title').textContent = clase.nombre;
+  const pasosHtml = clase.pasos.map(p => {
+    const t = TECNICAS[p.tecnicaId];
+    const stats = statsPorTecnica(claseId, p.tecnicaId);
+    const badge = stats ? `<span class="paso-stats-badge">${stats.count}x · 🏆 ${stats.mejor}</span>` : '';
+    return `<div class="paso-row paso-row-clickable" onclick="openTecnicaInfoModal('${p.tecnicaId}')">
+      <div class="paso-num">${p.orden}</div>
+      <div class="paso-info"><div class="paso-name">${t.nombre}${t.ramificada?'<span class="paso-branch-badge">ramificada</span>':''}</div></div>
+      ${badge}
+      <div class="paso-info-hint">Ver ejemplos →</div>
+    </div>`;
+  }).join('');
+  const resumenHtml = `<div class="paso-row paso-row-clickable paso-row-resumen" onclick="openResumenModal()">
+    <div class="paso-num paso-num-r">R</div>
+    <div class="paso-info"><div class="paso-name">Resumen — así se ve todo junto</div></div>
+    <div class="paso-info-hint">Ver ejemplo completo →</div>
+  </div>`;
+  document.getElementById('paso-list').innerHTML = pasosHtml + resumenHtml;
+  document.getElementById('mode-ejercicio').classList.remove('mode-selected');
+  document.getElementById('mode-simulador').classList.remove('mode-selected');
+  document.getElementById('practice-config').classList.add('hidden');
+  showScreen('clase');
+}
+
+function openTecnicaInfoModal(tecnicaId) {
+  const t = TECNICAS[tecnicaId];
+  document.getElementById('info-modal-eyebrow').textContent = t.nombre;
+  let body = '';
+
+  const stats = statsPorTecnica(ctx.claseId, tecnicaId);
+  if (stats) {
+    body += `<div class="modal-progress">
+      <div class="modal-progress-item"><div class="modal-progress-num">${stats.count}</div><div class="modal-progress-lbl">Ejercicios</div></div>
+      <div class="modal-progress-item"><div class="modal-progress-num">${stats.mejor}</div><div class="modal-progress-lbl">🏆 Mejor</div></div>
+      <div class="modal-progress-item"><div class="modal-progress-num">${stats.promedio}</div><div class="modal-progress-lbl">Promedio</div></div>
+    </div>`;
+  } else {
+    body += `<div style="font-size:12.5px;color:rgba(51,69,94,0.5);margin-bottom:14px">Todavía no has practicado esta técnica en Ejercicio.</div>`;
+  }
+
+  if (t.explicacion) {
+    body += `<div style="font-size:14px;color:#33455E;margin-bottom:16px;line-height:1.6">${t.explicacion}</div>`;
+  }
+  if (t.ramificada) {
+    body += Object.entries(t.ramas).map(([k,r]) => `
+      <div style="margin-bottom:12px;background:#F7F5EF;border-radius:10px;padding:10px 14px">
+        <div style="font-weight:800;color:#3E6FB0;font-size:12px;text-transform:uppercase;margin-bottom:4px">${r.label}</div>
+        <div style="font-size:13.5px;color:#33455E">${r.correcto}</div>
+      </div>`).join('');
+  } else {
+    if (t.correctas && t.correctas.length) {
+      body += `<div class="info-modal-label" style="color:#2E8B57">Ejemplos correctos</div>` +
+        t.correctas.map(c => `<div class="info-modal-item ok">✅ ${c}</div>`).join('');
+    }
+    if (t.incorrectas && t.incorrectas.length) {
+      body += `<div class="info-modal-label" style="color:#C93A3E">Ejemplos incorrectos</div>` +
+        t.incorrectas.map(c => `<div class="info-modal-item bad">❌ ${c}</div>`).join('');
+    }
+  }
+  document.getElementById('info-modal-body').innerHTML = body || '<div style="color:rgba(51,69,94,0.5);font-size:13px">Sin ejemplos capturados todavía.</div>';
+  document.getElementById('info-modal-overlay').classList.add('open');
+}
+
+let resumenIndex = 0;
+
+function getResumenEjemplos(clase) {
+  return clase.resumenEjemplos || (clase.resumen ? [clase.resumen] : []);
+}
+
+function openResumenModal() {
+  resumenIndex = 0;
+  const clase = CLASES.find(c=>c.id===ctx.claseId);
+  document.getElementById('info-modal-eyebrow').textContent = 'Resumen — ' + clase.nombre;
+  renderResumenModal(clase);
+  document.getElementById('info-modal-overlay').classList.add('open');
+}
+
+function renderResumenModal(clase) {
+  const ejemplos = getResumenEjemplos(clase);
+  if (!ejemplos.length) {
+    document.getElementById('info-modal-body').innerHTML = '<div style="color:rgba(51,69,94,0.5);font-size:13px">Todavía no hay ejemplos combinados para esta Clase.</div>';
+    return;
+  }
+  const actual = ejemplos[resumenIndex];
+  const industria = typeof actual === 'string' ? '' : (actual.industria || '');
+  const textoRaw = typeof actual === 'string' ? actual : actual.texto;
+  const texto = textoRaw.replace(/\[([^\]]+)\]/g, '<span class="resumen-tag">[$1]</span>');
+  document.getElementById('info-modal-body').innerHTML = `
+    ${industria ? `<div class="resumen-industria">🏢 ${industria}</div>` : ''}
+    <div class="resumen-nav">
+      <button type="button" class="resumen-arrow" onclick="navResumen(-1)">←</button>
+      <div class="resumen-counter">Ejemplo ${resumenIndex+1} de ${ejemplos.length}</div>
+      <button type="button" class="resumen-arrow" onclick="navResumen(1)">→</button>
+    </div>
+    <div class="resumen-text">${texto}</div>`;
+}
+
+function navResumen(dir) {
+  const clase = CLASES.find(c=>c.id===ctx.claseId);
+  const ejemplos = getResumenEjemplos(clase);
+  resumenIndex = (resumenIndex + dir + ejemplos.length) % ejemplos.length;
+  renderResumenModal(clase);
+}
+
+function closeInfoModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('info-modal-overlay').classList.remove('open');
+}
+
+// ── SETUP ─────────────────────────────────────────────────────────────────────
+let currentModalStep = null;
+
+function selectModo(modo) {
+  ctx.modo = modo;
+  ctx.tecnicaId = null; ctx.industria = null; ctx.avatarId = null;
+  ctx.conocimiento = null; ctx.platica = null; ctx.objeta = null;
+
+  document.getElementById('mode-ejercicio').classList.toggle('mode-selected', modo==='ejercicio');
+  document.getElementById('mode-simulador').classList.toggle('mode-selected', modo==='simulador');
+
+  ctx.stepsDef = modo === 'ejercicio'
+    ? [ {key:'tecnicaId', num:1, label:'Técnica'}, {key:'industria', num:2, label:'Industria'}, {key:'avatarId', num:3, label:'Tipo de cliente'} ]
+    : [ {key:'industria', num:1, label:'Industria'}, {key:'avatarId', num:2, label:'Avatar'}, {key:'dificultad', num:3, label:'Dificultad'} ];
+
+  document.getElementById('practice-config').classList.remove('hidden');
+  renderSteps();
+  document.getElementById('btn-start-practice').disabled = true;
+}
+
+function stepValueLabel(key) {
+  if (key === 'tecnicaId') return ctx.tecnicaId ? TECNICAS[ctx.tecnicaId].nombre : null;
+  if (key === 'industria') return ctx.industria || null;
+  if (key === 'avatarId') {
+    const lista = ctx.modo === 'ejercicio' ? AVATARS_ESTANDAR : AVATARS;
+    const a = lista.find(x=>x.id===ctx.avatarId);
+    return a ? a.nombre : null;
+  }
+  if (key === 'dificultad') {
+    if (!ctx.conocimiento || !ctx.platica || !ctx.objeta) return null;
+    return `Sabe: ${ctx.conocimiento} · Platica: ${ctx.platica} · Objeta: ${ctx.objeta}`;
+  }
+}
+
+function renderSteps() {
+  document.getElementById('steps-row').innerHTML = ctx.stepsDef.map((s,i) => {
+    const val = stepValueLabel(s.key);
+    const box = `<div class="step-box ${val?'filled':''}" onclick="openStepModal('${s.key}')">
+      <div class="step-num-badge">${s.num}</div>
+      <div class="step-label">${s.label}</div>
+      <div class="step-value ${val?'':'placeholder'}">${val || 'Toca para elegir'}</div>
+    </div>`;
+    return i < ctx.stepsDef.length-1 ? box + '<div class="step-arrow">→</div>' : box;
+  }).join('');
+  const required = ctx.stepsDef.map(s=>s.key);
+  document.getElementById('btn-start-practice').disabled = !required.every(k => stepValueLabel(k));
+}
+
+// ── Modal de cada paso ────────────────────────────────────────────────────
+function openStepModal(key) {
+  currentModalStep = key;
+  const clase = CLASES.find(c=>c.id===ctx.claseId);
+  let eyebrow = '', body = '';
+
+  if (key === 'tecnicaId') {
+    eyebrow = '¿Qué técnica practicas?';
+    body = clase.pasos.map(p => {
+      const t = TECNICAS[p.tecnicaId];
+      return `<div class="select-card ${ctx.tecnicaId===t.id?'selected':''}" onclick="pickModalOption('tecnicaId','${t.id}')">
+        <div class="select-title">${p.orden}. ${t.nombre}</div>
+        <div class="select-sub">${t.ramificada ? 'Técnica ramificada' : 'Técnica lineal'}</div>
+      </div>`;
+    }).join('');
+  } else if (key === 'industria') {
+    eyebrow = 'Elige la industria';
+    body = INDUSTRIAS.map(ind => `<div class="select-card ${ctx.industria===ind?'selected':''}" onclick="pickModalOption('industria','${ind}')"><div class="select-title">${ind}</div></div>`).join('');
+  } else if (key === 'avatarId') {
+    if (ctx.modo === 'ejercicio') {
+      eyebrow = '¿Contra qué tipo de cliente practicas?';
+      body = AVATARS_ESTANDAR.map(a => `<div class="select-card ${ctx.avatarId===a.id?'selected':''}" onclick="pickModalOption('avatarId','${a.id}')">
+        <div class="select-title">${a.icono} ${a.nombre}</div>
+        <div class="select-sub">${a.desc}</div>
+      </div>`).join('');
+    } else {
+      eyebrow = 'Elige tu avatar';
+      body = AVATARS.map(a => `<div class="select-card avatar-card gender-${a.gender} ${ctx.avatarId===a.id?'selected':''}" onclick="pickModalOption('avatarId','${a.id}')">
+        <div class="select-title">${a.gender==='mujer'?'👩':'👨'} ${a.nombre}</div>
+      </div>`).join('');
+    }
+  } else if (key === 'dificultad') {
+    eyebrow = 'Nivel de dificultad — 3 perillas independientes';
+    body = ['conocimiento','platica','objeta'].map(field => {
+      const titleMap = { conocimiento:'🧠 Conocimiento — qué tanto sabe del tema', platica:'💬 Platica — qué tanto habla', objeta:'🥊 Objeta — qué tanto pone objeciones' };
+      return `<div class="modal-diff-group">
+        <div class="modal-diff-title">${titleMap[field]}</div>
+        <div class="diff-options">${DIFF_OPTS.map(o => `<button type="button" class="diff-opt ${ctx[field]===o.k?'selected':''}" onclick="pickDifficulty('${field}','${o.k}')">${o.l}</button>`).join('')}</div>
+      </div>`;
+    }).join('') + `<button class="btn-primary" style="width:100%" onclick="closeStepModal()">Listo</button>`;
+  }
+
+  document.getElementById('step-modal-eyebrow').textContent = eyebrow;
+  const gridClass = key === 'industria' ? 'select-grid-industria' : 'select-grid';
+  const gridStyle = key === 'industria' ? '' : ' style="grid-template-columns:1fr"';
+  document.getElementById('step-modal-body').innerHTML = key==='dificultad' ? body : `<div class="${gridClass}"${gridStyle}>${body}</div>`;
+  document.getElementById('step-modal-box').classList.toggle('wide', key === 'industria');
+  document.getElementById('step-modal-overlay').classList.add('open');
+}
+
+function closeStepModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('step-modal-overlay').classList.remove('open');
+  renderSteps();
+}
+
+function pickModalOption(field, value) {
+  ctx[field] = value;
+  closeStepModal();
+}
+
+function pickDifficulty(field, value) {
+  ctx[field] = value;
+  openStepModal('dificultad'); // re-renderiza el modal para reflejar la selección, sin cerrarlo
+}
+
+// ── PRACTICA: arranca Ejercicio o Simulador ─────────────────────────────────
+function renderChatAvatarRecap(avatar) {
+  if (ctx.modo === 'ejercicio') {
+    document.getElementById('chat-avatar-recap').innerHTML = `
+      <div class="chat-avatar-recap-icon">${avatar.icono}</div>
+      <div>
+        <div class="chat-avatar-recap-name">${avatar.nombre}</div>
+        <div class="chat-avatar-recap-tags">
+          ${ctx.industria ? `<span class="chat-avatar-recap-tag">🏢 ${ctx.industria}</span>` : ''}
+          <span class="chat-avatar-recap-tag">${avatar.desc}</span>
+        </div>
+      </div>`;
+    return;
+  }
+  const icon = avatar.gender==='mujer' ? '👩' : '👨';
+  const tags = [];
+  if (ctx.industria) tags.push(`🏢 ${ctx.industria}`);
+  if (ctx.conocimiento) tags.push(`🧠 ${DIFF_OPTS.find(o=>o.k===ctx.conocimiento).l}`);
+  if (ctx.platica) tags.push(`💬 ${DIFF_OPTS.find(o=>o.k===ctx.platica).l}`);
+  if (ctx.objeta) tags.push(`🥊 ${DIFF_OPTS.find(o=>o.k===ctx.objeta).l}`);
+  document.getElementById('chat-avatar-recap').innerHTML = `
+    <div class="chat-avatar-recap-icon">${icon}</div>
+    <div>
+      <div class="chat-avatar-recap-name">${avatar.nombre}</div>
+      <div class="chat-avatar-recap-tags">${tags.map(t=>`<span class="chat-avatar-recap-tag">${t}</span>`).join('')}</div>
+    </div>`;
+}
+
+function openCancelModal() { document.getElementById('cancel-modal-overlay').classList.add('open'); }
+function closeCancelModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('cancel-modal-overlay').classList.remove('open');
+}
+function confirmCancelPractice() {
+  closeCancelModal();
+  showScreen('clase'); // nada se guarda — el progreso de este intento se descarta
+}
+
+function startPractice() {
+  ctx.messages = [];
+  ctx.turn = 0; ctx.hits = 0; ctx.turnLog = [];
+  const avatar = ctx.modo === 'ejercicio'
+    ? AVATARS_ESTANDAR.find(a=>a.id===ctx.avatarId)
+    : AVATARS.find(a=>a.id===ctx.avatarId);
+  document.getElementById('chat-box').innerHTML = '';
+  renderChatAvatarRecap(avatar);
+
+  if (ctx.modo === 'ejercicio') {
+    const t = TECNICAS[ctx.tecnicaId];
+    document.getElementById('chat-eyebrow').textContent = 'Ejercicio · ' + ctx.industria + ' · ' + avatar.nombre;
+    document.getElementById('chat-title').textContent = t.nombre;
+    document.getElementById('concept-bar').classList.add('hidden');
+    ctx.maxTurns = EJ_MAX_TURNS;
+    ctx.neededHits = EJ_NEEDED_HITS;
+    document.getElementById('turn-max').textContent = ctx.maxTurns;
+    document.getElementById('hit-max').textContent = ctx.neededHits;
+    document.getElementById('turn-count').textContent = 0;
+    document.getElementById('hit-count').textContent = 0;
+    showScreen('chat');
+    if (t.ramificada) { nextBranchTurn(); }
+    else { showNextLinealDisparador(t); }
+  } else {
+    const clase = CLASES.find(c=>c.id===ctx.claseId);
+    document.getElementById('chat-eyebrow').textContent = 'Simulador · ' + ctx.industria;
+    document.getElementById('chat-title').textContent = clase.nombre;
+    ctx.tecnicasClase = clase.pasos.map(p => TECNICAS[p.tecnicaId]);
+    ctx.touched = new Set();
+    ctx.maxTurns = 6; ctx.neededHits = Math.min(3, ctx.tecnicasClase.length);
+    document.getElementById('turn-max').textContent = ctx.maxTurns;
+    document.getElementById('hit-max').textContent = ctx.neededHits;
+    document.getElementById('turn-count').textContent = 0;
+    document.getElementById('hit-count').textContent = 0;
+    renderSimConceptBar();
+    document.getElementById('concept-bar').classList.remove('hidden');
+    showScreen('chat');
+    addBubble('prospecto', '(escribe tú primero — arranca la conversación como vendedor)');
+  }
+}
+
+function renderSimConceptBar() {
+  document.getElementById('concept-bar').innerHTML = ctx.tecnicasClase.map(t =>
+    `<span class="concept-chip${ctx.touched.has(t.id)?' touched':''}">${ctx.touched.has(t.id)?'✓ ':''}${t.nombre}</span>`).join('');
+}
+
+function addBubble(who, text) {
+  const box = document.getElementById('chat-box');
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + (who==='vendedor'?'vendedor':'prospecto');
+  row.innerHTML = `<div class="msg-col"><div class="msg-label">${who==='vendedor'?'Tú':'Prospecto'}</div><div class="msg-bubble ${who==='vendedor'?'vendedor':'prospecto'}">${text}</div></div>`;
+  box.appendChild(row); box.scrollTop = box.scrollHeight;
+  return row;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// MOTOR LOCAL — sin fetch, sin internet. Compara palabras clave contra los
+// ejemplos correctos/incorrectos que ya viven en la biblioteca de técnicas.
+// ══════════════════════════════════════════════════════════════════════════
+const STOPWORDS_ES = new Set(['este','esta','estos','estas',
+  'hay','para','con','del','las','los','que','como','pero','muy','mas','todo','todos','toda','todas',
+  'desde','hasta','sobre','entre','sin','ser','son','fue','era','eran','han','estan','sera','seria',
+  'usted','ustedes','nuestro','nuestra','nuestros','nuestras','tambien','porque','cuando','donde',
+  'puede','pueden','podria','podrian','vamos','ademas','entonces','ahora','solo','sólo','uno','una','sus',
+  // Sustantivos genéricos — pueden aparecer en cualquier técnica sin significar nada por sí solos
+  'producto','productos','servicio','servicios','cliente','clientes','empresa','plan','planes',
+  'forma','manera','cosa','cosas','opcion','opciones']);
+
+function normalizeWords(text) {
+  return String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w => w.length >= 3 && !STOPWORDS_ES.has(w));
+}
+function overlapScore(respuesta, ejemplo) {
+  const set = new Set(normalizeWords(ejemplo));
+  let count = 0;
+  normalizeWords(respuesta).forEach(w => { if (set.has(w)) count++; });
+  return count;
+}
+
+// Construye el "contexto" de una técnica: palabras que aparecen SOLO en los ejemplos
+// correctos (nunca en los incorrectos) y viceversa. Eso es la señal real de la técnica,
+// no las oraciones completas — así una palabra genérica que se cuele en un ejemplo
+// incorrecto ya no ensucia la calificación.
+function buildTecnicaSignature(t) {
+  const wordsIn = (lista) => {
+    const set = new Set();
+    (lista || []).forEach(frase => normalizeWords(frase).forEach(w => set.add(w)));
+    return set;
+  };
+  const correctSet = wordsIn(t.correctas);
+  const incorrectSet = wordsIn(t.incorrectas);
+  const positivos = new Set([...correctSet].filter(w => !incorrectSet.has(w)));
+  const negativos = new Set([...incorrectSet].filter(w => !correctSet.has(w)));
+  return { positivos, negativos };
+}
+
+function mockEvaluateLineal(t, respuesta) {
+  const sig = buildTecnicaSignature(t);
+  const words = normalizeWords(respuesta);
+  const scoreCorrecta = words.filter(w => sig.positivos.has(w)).length;
+  const scoreIncorrecta = words.filter(w => sig.negativos.has(w)).length;
+  const desarrollada = respuesta.trim().split(/\s+/).length >= 4;
+  const acierto = desarrollada && scoreCorrecta >= 1 && scoreCorrecta > scoreIncorrecta;
+  const que_le_falto = acierto ? '' : (t.correctas && t.correctas[0] ? `Acércate más a algo como: "${t.correctas[0]}"` : 'Sé más específico en tu respuesta.');
+  return { acierto, que_le_falto };
+}
+
+function mockEvaluateRama(ramaObj, respuesta) {
+  const score = overlapScore(respuesta, ramaObj.correcto);
+  const desarrollada = respuesta.trim().split(/\s+/).length >= 3;
+  const acierto = desarrollada && score >= 1;
+  const que_le_falto = acierto ? '' : `Para esta rama intenta algo como: "${ramaObj.correcto}"`;
+  return { acierto, que_le_falto };
+}
+
+function mockDetectTecnicasAplicadas(tecnicas, respuesta) {
+  const words = normalizeWords(respuesta);
+  return tecnicas.filter(t => {
+    if (t.ramificada) {
+      const ejemplos = Object.values(t.ramas).map(r=>r.correcto);
+      return Math.max(0, ...ejemplos.map(e => overlapScore(respuesta, e))) >= 1;
+    }
+    const sig = buildTecnicaSignature(t);
+    const scoreCorrecta = words.filter(w => sig.positivos.has(w)).length;
+    const scoreIncorrecta = words.filter(w => sig.negativos.has(w)).length;
+    return scoreCorrecta >= 1 && scoreCorrecta > scoreIncorrecta;
+  }).map(t => t.nombre);
+}
+
+const RAMA_LINEAS = {
+  si: ['Sí, la verdad me convence.', 'Me gusta, sigamos con eso.', 'Sí, eso es justo lo que buscaba.'],
+  no: ['No sé, no me termina de convencer.', 'La verdad lo veo caro para lo que ofrece.', 'No creo que sea lo mío.'],
+  ambiguo: ['Mmm, déjame pensarlo.', 'No sé, tengo que verlo con calma.', 'Puede ser, no estoy seguro todavía.'],
+};
+const SIM_PROSPECTO_LINEAS = ['Ok, cuéntame más.', 'Mmm, no estoy seguro todavía.', 'Eso suena bien, ¿qué más incluye?', '¿Y cómo se compara con lo que ya tengo?', 'Entiendo, sigue.', 'No sé, se me hace parecido a lo que ya vi en otro lado.'];
+function pickRandom(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+
+function nextBranchTurn() {
+  const ramaKeys = Object.keys(TECNICAS[ctx.tecnicaId].ramas);
+  const ramaKey = ramaKeys[Math.floor(Math.random()*ramaKeys.length)];
+  const texto = pickRandom(RAMA_LINEAS[ramaKey] || ['...']);
+  addBubble('prospecto', texto);
+  ctx.messages.push({ role:'assistant', content:texto });
+  ctx.ramaEsperada = ramaKey;
+}
+
+function showNextLinealDisparador(t) {
+  if (!t.disparadores || !t.disparadores.length) {
+    addBubble('prospecto', '(Esta técnica no tiene frases disparadoras configuradas — pídele a tu admin que agregue al menos una desde "Técnicas y Clases".)');
+    return;
+  }
+  const disp = t.disparadores[Math.floor(Math.random()*t.disparadores.length)];
+  ctx.disparadorUsado = disp;
+  addBubble('prospecto', disp);
+  ctx.messages.push({ role:'assistant', content:disp });
+}
+
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  const vendorRow = addBubble('vendedor', text);
+  ctx.messages.push({ role:'user', content:text });
+
+  if (ctx.modo === 'ejercicio') {
+    const t = TECNICAS[ctx.tecnicaId];
+    if (t.ramificada) handleBranchAnswer(t, text, vendorRow);
+    else handleLinealAnswer(t, text, vendorRow);
+  } else {
+    handleSimTurn(text, vendorRow);
+  }
+}
+
+function handleBranchAnswer(t, text, vendorRow) {
+  const ramaObj = t.ramas[ctx.ramaEsperada];
+  const parsed = mockEvaluateRama(ramaObj, text);
+
+  const fb = parsed.acierto
+    ? `<div class="msg-feedback perfect"><div class="msg-feedback-rama">Rama: ${ramaObj.label}</div>✅ Aplicaste bien la técnica.</div>`
+    : `<div class="msg-feedback"><div class="msg-feedback-rama">Rama: ${ramaObj.label}</div>Te faltó: ${parsed.que_le_falto}</div>`;
+  vendorRow.querySelector('.msg-col').insertAdjacentHTML('beforeend', fb);
+
+  if (parsed.acierto) ctx.hits++;
+  ctx.turnLog.push({ tecnica:t.nombre, rama:ctx.ramaEsperada, acierto:!!parsed.acierto, falto:parsed.que_le_falto, respuesta:text });
+  ctx.turn++;
+  document.getElementById('turn-count').textContent = ctx.turn;
+  document.getElementById('hit-count').textContent = ctx.hits;
+  if (ctx.hits >= ctx.neededHits || ctx.turn >= ctx.maxTurns) finishPractice();
+  else nextBranchTurn();
+}
+
+function handleLinealAnswer(t, text, vendorRow) {
+  const parsed = mockEvaluateLineal(t, text);
+
+  const fb = parsed.acierto
+    ? `<div class="msg-feedback perfect">✅ Aplicaste bien la técnica.</div>`
+    : `<div class="msg-feedback">Te faltó: ${parsed.que_le_falto}</div>`;
+  vendorRow.querySelector('.msg-col').insertAdjacentHTML('beforeend', fb);
+
+  if (parsed.acierto) ctx.hits++;
+  ctx.turnLog.push({ tecnica:t.nombre, acierto:!!parsed.acierto, falto:parsed.que_le_falto, respuesta:text });
+  ctx.turn++;
+  document.getElementById('turn-count').textContent = ctx.turn;
+  document.getElementById('hit-count').textContent = ctx.hits;
+  if (ctx.hits >= ctx.neededHits || ctx.turn >= ctx.maxTurns) finishPractice();
+  else showNextLinealDisparador(t);
+}
+
+function handleSimTurn(text, vendorRow) {
+  const personaMsg = pickRandom(SIM_PROSPECTO_LINEAS);
+  addBubble('prospecto', personaMsg);
+  ctx.messages.push({ role:'assistant', content:personaMsg });
+
+  const nuevasNombres = mockDetectTecnicasAplicadas(ctx.tecnicasClase, text);
+  let newFound = 0;
+  nuevasNombres.forEach(nombre => {
+    const t = ctx.tecnicasClase.find(tc => tc.nombre === nombre);
+    if (t && !ctx.touched.has(t.id)) { ctx.touched.add(t.id); newFound++; }
+  });
+  renderSimConceptBar();
+
+  const fb = newFound>0
+    ? `<div class="msg-feedback perfect">✅ Detecté ${newFound} técnica(s) nueva(s) aplicada(s).</div>`
+    : `<div class="msg-feedback">No detecté una técnica nueva de la fórmula en este mensaje.</div>`;
+  vendorRow.querySelector('.msg-col').insertAdjacentHTML('beforeend', fb);
+
+  ctx.turnLog.push({
+    tecnica: nuevasNombres.length ? nuevasNombres.join(', ') : null,
+    acierto: newFound > 0,
+    falto: newFound > 0 ? '' : 'No se detectó ninguna técnica de la fórmula en este mensaje.',
+    respuesta: text,
+  });
+
+  ctx.turn++;
+  document.getElementById('turn-count').textContent = ctx.turn;
+  document.getElementById('hit-count').textContent = Math.min(ctx.touched.size, ctx.neededHits);
+
+  if (ctx.touched.size >= ctx.neededHits || ctx.turn >= ctx.maxTurns) finishPractice();
+}
+
+function mockMimoSummary() {
+  if (ctx.modo === 'ejercicio') {
+    const aciertos = ctx.turnLog.filter(t=>t.acierto).length;
+    const fallos = ctx.turnLog.length - aciertos;
+    return {
+      mantener: aciertos>0 ? 'Las respuestas donde acertaste mostraban ideas claras y concretas — sigue por ahí.' : 'Intenta construir respuestas completas y desarrolladas, no cortas.',
+      incorporar: 'Acércate más al lenguaje de los ejemplos correctos de cada técnica — la intención cuenta, no las palabras exactas.',
+      modificar: fallos>0 ? 'En las respuestas que no acertaron, faltó ser más específico o conectar mejor con lo que pedía ese paso.' : 'Vas bien, no hay mucho que modificar por ahora.',
+      omitir: 'Evita respuestas muy cortas o genéricas — se notan y no cumplen la técnica.',
+    };
+  }
+  const cubiertas = ctx.touched.size;
+  return {
+    mantener: cubiertas>0 ? 'Buen avance aplicando varias técnicas de la fórmula dentro de la conversación.' : 'Sigue practicando, apenas vas arrancando con esta Clase.',
+    incorporar: 'Intenta enlazar más técnicas de la fórmula en una misma respuesta, como se ve en el ejemplo "R" de la Clase.',
+    modificar: 'Revisa el orden de la fórmula — al principio ayuda seguirlo tal cual, antes de improvisar el orden.',
+    omitir: 'Evita respuestas que no avancen la conversación hacia el siguiente paso de la fórmula.',
+  };
+}
+
+// ── RESULTADO + MIMO ──────────────────────────────────────────────────────────
+function finishPractice() {
+  let score;
+  if (ctx.modo === 'ejercicio') {
+    const fallos = Math.min(ctx.turn - ctx.hits, 3);
+    const exito = ctx.hits >= ctx.neededHits;
+    score = exito ? (POINTS_TABLE[fallos] || 20) * EJ_NEEDED_HITS : ctx.hits * 10;
+  } else {
+    const hits = ctx.touched.size;
+    score = Math.round((hits / ctx.neededHits) * 100);
+  }
+  document.getElementById('result-score').innerHTML = score + '<span style="font-size:16px"> pts</span>';
+  showScreen('result');
+
+  const mimo = mockMimoSummary();
+  document.getElementById('mimo-mantener').textContent = mimo.mantener;
+  document.getElementById('mimo-incorporar').textContent = mimo.incorporar;
+  document.getElementById('mimo-modificar').textContent = mimo.modificar;
+  document.getElementById('mimo-omitir').textContent = mimo.omitir;
+
+  document.getElementById('detalle-respuestas').innerHTML = ctx.turnLog.map((t, i) => `
+    <div class="respuesta-item ${t.acierto?'ok':'bad'}">
+      <div class="respuesta-item-texto">${i+1}. "${t.respuesta || ''}"</div>
+      <div class="respuesta-item-verdict">${t.acierto ? '✅ Bien hecho — aplicaste la técnica correctamente.' : '❌ ' + (t.falto || 'No cumplió la técnica esperada.')}</div>
+    </div>`).join('') || '<div style="font-size:13px;color:rgba(51,69,94,0.5)">No hay respuestas registradas.</div>';
+
+  // Guardar en localStorage
+  const prog = loadProgress();
+  if (!prog[userName]) prog[userName] = {};
+  if (!prog[userName][ctx.claseId]) prog[userName][ctx.claseId] = { ejercicios:[], simuladores:[] };
+  const entry = { tecnicaId: ctx.tecnicaId||null, score, ts: Date.now() };
+  if (ctx.modo === 'ejercicio') prog[userName][ctx.claseId].ejercicios.push(entry);
+  else prog[userName][ctx.claseId].simuladores.push(entry);
+  saveProgress(prog);
+
+  // También al Sheet — no bloquea la UI si falla
+  gsFireAndForget('guardarResultado', {
+    usuario: userName, claseId: ctx.claseId, tecnicaId: entry.tecnicaId,
+    modo: ctx.modo === 'ejercicio' ? 'Ejercicio' : 'Simulador', score, ts: entry.ts,
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ADMIN — Técnicas y Clases
+// ══════════════════════════════════════════════════════════════════════════
+function openAdminHub() { showScreen('admin-hub'); }
+
+async function sincronizarTodoConSheets() {
+  const btn = document.getElementById('btn-sync-sheets');
+  const status = document.getElementById('sync-status');
+  btn.disabled = true;
+
+  const allProg = JSON.parse(localStorage.getItem(LS_PROGRESS) || '{}');
+  let total = Object.keys(TECNICAS).length + CLASES.length + Object.keys(EMPRESAS).length;
+  Object.values(EMPRESAS).forEach(e => total += e.usuarios.length);
+  Object.values(allProg).forEach(porClase => Object.values(porClase).forEach(cp => { total += (cp.ejercicios||[]).length + (cp.simuladores||[]).length; }));
+  let pasos = 0;
+  const tick = (msg) => { pasos++; status.textContent = `Sincronizando… ${pasos}/${total}${msg?' — '+msg:''}`; };
+
+  for (const t of Object.values(TECNICAS)) { await gs('saveTecnica', { tecnica: t }); tick('técnicas'); }
+  for (const c of CLASES) { await gs('saveClase', { clase: c }); tick('Clases'); }
+
+  for (const [empresaId, e] of Object.entries(EMPRESAS)) {
+    const admin = e.usuarios.find(u => u.rol === 'admin_empresa') || e.usuarios[0];
+    await gs('saveEmpresaNueva', { id: empresaId, nombre: e.nombre, maxUsuarios: e.maxUsuarios, adminUser: admin.nombre, adminPass: admin.password });
+    tick('Empresas');
+    for (const u of e.usuarios) {
+      if (u.nombre !== admin.nombre) await gs('inviteUsuario', { empresaId, nombre: u.nombre, password: u.password });
+      if (!u.activo) await gs('toggleUsuarioActivo', { empresaId, nombre: u.nombre });
+      tick('usuarios');
+    }
+    for (const [nombre, clasesIds] of Object.entries(e.asignaciones || {})) {
+      for (const claseId of clasesIds) await gs('toggleAsignacion', { empresaId, nombre, claseId });
+    }
+  }
+
+  for (const [usuario, porClase] of Object.entries(allProg)) {
+    for (const [claseId, cp] of Object.entries(porClase)) {
+      for (const r of (cp.ejercicios||[])) { await gs('guardarResultado', { usuario, claseId, tecnicaId: r.tecnicaId, modo:'Ejercicio', score: r.score, ts: r.ts }); tick('resultados'); }
+      for (const r of (cp.simuladores||[])) { await gs('guardarResultado', { usuario, claseId, tecnicaId: null, modo:'Simulador', score: r.score, ts: r.ts }); tick('resultados'); }
+    }
+  }
+
+  status.textContent = '✅ Listo — todo sincronizado con Google Sheets. A partir de ahora, lo nuevo se manda solo.';
+  btn.disabled = false;
+}
+
+function clasesQueUsanTecnica(tecnicaId) {
+  return CLASES.filter(c => c.pasos.some(p => p.tecnicaId === tecnicaId));
+}
+
+function openAdminTecnicas() { openAdminContenido('tecnicas'); }
+function openAdminClases() { openAdminContenido('clases'); }
+
+function openAdminContenido(tab) {
+  renderContentCounters();
+  renderTecnicasList();
+  renderClasesList();
+  showScreen('admin-contenido');
+  showContentTab(tab || 'tecnicas');
+}
+
+function showContentTab(tab) {
+  document.getElementById('ctab-tecnicas').classList.toggle('active', tab==='tecnicas');
+  document.getElementById('ctab-clases').classList.toggle('active', tab==='clases');
+  document.getElementById('content-view-tecnicas').classList.toggle('hidden', tab!=='tecnicas');
+  document.getElementById('content-view-clases').classList.toggle('hidden', tab!=='clases');
+}
+
+function backToContenido(tab) {
+  showScreen('admin-contenido');
+  showContentTab(tab);
+}
+
+function renderContentCounters() {
+  document.getElementById('content-counters').innerHTML = `
+    <div class="content-counter"><div class="content-counter-num">${Object.keys(TECNICAS).length}</div><div class="content-counter-lbl">Técnicas</div></div>
+    <div class="content-counter"><div class="content-counter-num">${CLASES.length}</div><div class="content-counter-lbl">Clases</div></div>`;
+}
+
+function renderTecnicasList() {
+  document.getElementById('admin-tecnicas-list').innerHTML = Object.values(TECNICAS).map(t => {
+    const usadaEn = clasesQueUsanTecnica(t.id);
+    const n = usadaEn.length;
+    return `<div class="admin-item-row">
+      <div class="admin-item-info">
+        <div class="admin-item-name">${t.nombre} ${t.ramificada?'<span class="paso-branch-badge">ramificada</span>':''}</div>
+        <div class="admin-item-sub">${n ? usadaEn.map(c=>c.nombre).join(', ') : 'Ninguna Clase la usa todavía'}</div>
+      </div>
+      <span class="uso-badge ${n?'':'sin-uso'}">${n} Clase${n===1?'':'s'}</span>
+      <div class="admin-item-actions">
+        <button class="btn-icon" onclick="openTecnicaForm('${t.id}')">✏️</button>
+        <button class="btn-icon" onclick="deleteTecnica('${t.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('') || '<div style="padding:1rem;color:rgba(51,69,94,0.5);font-size:13px">No hay técnicas todavía.</div>';
+}
+
+let tfEditingId = null;
+let tfRamas = [];
+let tfLists = { disparadores:[], correctas:[], incorrectas:[] };
+
+function openTecnicaForm(tecnicaId) {
+  tfEditingId = tecnicaId;
+  document.getElementById('tf-duplicate-warning').classList.add('hidden');
+  const t = tecnicaId ? TECNICAS[tecnicaId] : null;
+  document.getElementById('tf-eyebrow').textContent = t ? 'Editando' : 'Nueva técnica';
+  document.getElementById('tf-title').textContent = t ? t.nombre : 'Nueva técnica';
+  document.getElementById('tf-nombre').value = t ? t.nombre : '';
+  tfLists = {
+    disparadores: t && !t.ramificada ? [...(t.disparadores||[])] : [],
+    correctas: t && !t.ramificada ? [...(t.correctas||[])] : [],
+    incorrectas: t && !t.ramificada ? [...(t.incorrectas||[])] : [],
+  };
+  renderAllLists();
+  tfRamas = t && t.ramificada ? Object.entries(t.ramas).map(([clave,r]) => ({clave, label:r.label, correcto:r.correcto})) : [];
+  setRamificada(t ? !!t.ramificada : false);
+  renderRamasList();
+  showScreen('admin-tecnica-form');
+}
+
+function setRamificada(esRamificada) {
+  document.getElementById('tf-lineal').classList.toggle('selected', !esRamificada);
+  document.getElementById('tf-ramificada').classList.toggle('selected', esRamificada);
+  document.getElementById('tf-lineal-block').classList.toggle('hidden', esRamificada);
+  document.getElementById('tf-ramas-block').classList.toggle('hidden', !esRamificada);
+  document.getElementById('tf-title').dataset.ramificada = esRamificada ? '1' : '0';
+  if (esRamificada && tfRamas.length === 0) {
+    tfRamas = [{clave:'', label:'', correcto:''}];
+    renderRamasList();
+  }
+}
+
+function renderRamasList() {
+  document.getElementById('tf-ramas-list').innerHTML = tfRamas.map((r,i) => `
+    <div class="rama-field">
+      <div style="flex:1">
+        <input type="text" placeholder="Nombre de la rama (ej. Dijo que sí)" value="${r.label||''}" oninput="tfRamas[${i}].label=this.value">
+        <input type="text" placeholder="¿Cuál es la técnica correcta para esta rama?" value="${r.correcto||''}" oninput="tfRamas[${i}].correcto=this.value" style="margin-top:6px">
+      </div>
+      <button type="button" class="btn-remove" onclick="removeRamaField(${i})">✕</button>
+    </div>`).join('');
+}
+function addRamaField() { tfRamas.push({clave:'', label:'', correcto:''}); renderRamasList(); }
+function removeRamaField(i) { tfRamas.splice(i,1); renderRamasList(); }
+
+// ── Las 3 columnas independientes (disparadores / correctas / incorrectas) ──
+function renderAllLists() { ['disparadores','correctas','incorrectas'].forEach(renderList); }
+
+function renderList(field) {
+  const container = document.getElementById('tf-'+field+'-list');
+  container.innerHTML = tfLists[field].map((item,i) => `
+    <div class="col-item"><span>${item}</span><button type="button" class="btn-remove" style="font-size:14px" onclick="removeFromList('${field}',${i})">✕</button></div>`).join('');
+  document.getElementById('tf-'+field+'-count').textContent = `(${tfLists[field].length})`;
+}
+
+function addToList(field) {
+  const input = document.getElementById('tf-' + (field==='disparadores'?'disparador':field==='correctas'?'correcta':'incorrecta') + '-input');
+  const val = input.value.trim();
+  if (!val) return;
+  tfLists[field].push(val);
+  input.value = '';
+  renderList(field);
+}
+function removeFromList(field, i) { tfLists[field].splice(i,1); renderList(field); }
+
+function checkDuplicateTecnica() {
+  const nombre = document.getElementById('tf-nombre').value.trim().toLowerCase();
+  const warnEl = document.getElementById('tf-duplicate-warning');
+  if (nombre.length < 4) { warnEl.classList.add('hidden'); return; }
+  const parecida = Object.values(TECNICAS).find(t => t.id !== tfEditingId && (
+    t.nombre.toLowerCase().includes(nombre) || nombre.includes(t.nombre.toLowerCase())
+  ));
+  if (parecida) {
+    warnEl.innerHTML = `⚠️ Ya existe una técnica parecida: <b>"${parecida.nombre}"</b>. ¿Es la misma, o de verdad es distinta? Si es la misma, usa "Editar" desde la lista en vez de crear una nueva.`;
+    warnEl.classList.remove('hidden');
+  } else {
+    warnEl.classList.add('hidden');
+  }
+}
+
+function saveTecnica() {
+  const nombre = document.getElementById('tf-nombre').value.trim();
+  if (!nombre) { alert('Ponle nombre a la técnica.'); return; }
+  const esRamificada = document.getElementById('tf-ramificada').classList.contains('selected');
+  const id = tfEditingId || slugify(nombre);
+
+  if (tfEditingId) {
+    const usadaEn = clasesQueUsanTecnica(id);
+    if (usadaEn.length > 1 && !confirm(`Esta técnica también la usan: ${usadaEn.map(c=>c.nombre).join(', ')}. Editarla aquí afecta a esas Clases también. ¿Seguro quieres guardar el cambio?`)) return;
+  }
+
+  if (esRamificada) {
+    const ramas = {};
+    tfRamas.forEach(r => {
+      const clave = r.clave || slugify(r.label);
+      ramas[clave] = { label: r.label, correcto: r.correcto };
+    });
+    TECNICAS[id] = { id, nombre, ramificada:true, ramas };
+  } else {
+    if (!tfLists.disparadores.length) { alert('Agrega al menos una frase disparadora.'); return; }
+    if (!tfLists.correctas.length) { alert('Agrega al menos una respuesta correcta.'); return; }
+    TECNICAS[id] = {
+      id, nombre, ramificada:false,
+      disparadores: [...tfLists.disparadores],
+      correctas: [...tfLists.correctas],
+      incorrectas: [...tfLists.incorrectas],
+    };
+  }
+  saveContent();
+  gsFireAndForget('saveTecnica', { tecnica: TECNICAS[id] });
+  openAdminTecnicas();
+}
+
+function deleteTecnica(id) {
+  const usadaEn = clasesQueUsanTecnica(id);
+  if (usadaEn.length) { alert(`No se puede borrar — la usan estas Clases: ${usadaEn.map(c=>c.nombre).join(', ')}. Quítala de esas Clases primero.`); return; }
+  if (!confirm('¿Borrar esta técnica de la biblioteca?')) return;
+  delete TECNICAS[id];
+  saveContent();
+  gsFireAndForget('deleteTecnica', { id });
+  openAdminTecnicas();
+}
+
+function renderClasesList() {
+  document.getElementById('admin-clases-list').innerHTML = CLASES.map(c => `
+    <div class="admin-item-row">
+      <div class="admin-item-info">
+        <div class="admin-item-name">${c.nombre}</div>
+        <div class="admin-item-sub">${c.pasos.map(p => TECNICAS[p.tecnicaId]?.nombre || '(técnica borrada)').join(' → ')}</div>
+      </div>
+      <div class="admin-item-actions">
+        <button class="btn-icon" onclick="openClaseForm('${c.id}')">✏️</button>
+        <button class="btn-icon" onclick="deleteClase('${c.id}')">🗑</button>
+      </div>
+    </div>`).join('') || '<div style="padding:1rem;color:rgba(51,69,94,0.5);font-size:13px">No hay Clases todavía.</div>';
+}
+
+let cfEditingId = null;
+let cfPasos = [];
+
+function openClaseForm(claseId) {
+  cfEditingId = claseId;
+  const c = claseId ? CLASES.find(x=>x.id===claseId) : null;
+  document.getElementById('cf-eyebrow').textContent = c ? 'Editando' : 'Nueva Clase';
+  document.getElementById('cf-title').textContent = c ? c.nombre : 'Nueva Clase';
+  document.getElementById('cf-nombre').value = c ? c.nombre : '';
+  cfPasos = c ? c.pasos.map(p => p.tecnicaId) : [];
+  renderPasosList();
+  showScreen('admin-clase-form');
+}
+
+function renderPasosList() {
+  const opciones = Object.values(TECNICAS).map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+  document.getElementById('cf-pasos-list').innerHTML = cfPasos.map((tid,i) => `
+    <div class="paso-field">
+      <div class="paso-num" style="width:24px;height:24px;font-size:11px">${i+1}</div>
+      <select onchange="cfPasos[${i}]=this.value">
+        <option value="">— elige una técnica —</option>
+        ${Object.values(TECNICAS).map(t => `<option value="${t.id}" ${t.id===tid?'selected':''}>${t.nombre}</option>`).join('')}
+      </select>
+      <button type="button" class="btn-remove" onclick="removePasoField(${i})">✕</button>
+    </div>`).join('');
+}
+function addPasoField() { cfPasos.push(''); renderPasosList(); }
+function removePasoField(i) { cfPasos.splice(i,1); renderPasosList(); }
+
+function saveClase() {
+  const nombre = document.getElementById('cf-nombre').value.trim();
+  if (!nombre) { alert('Ponle nombre a la Clase.'); return; }
+  const pasosValidos = cfPasos.filter(Boolean);
+  if (!pasosValidos.length) { alert('Agrega al menos un paso con una técnica.'); return; }
+  const id = cfEditingId || slugify(nombre);
+  const pasos = pasosValidos.map((tid,i) => ({ orden:i+1, tecnicaId:tid }));
+
+  const idx = CLASES.findIndex(c=>c.id===id);
+  if (idx >= 0) CLASES[idx] = { id, nombre, pasos };
+  else CLASES.push({ id, nombre, pasos });
+  saveContent();
+  gsFireAndForget('saveClase', { clase: CLASES.find(c=>c.id===id) });
+  openAdminClases();
+}
+
+function deleteClase(id) {
+  if (!confirm('¿Borrar esta Clase? Las técnicas de su biblioteca no se borran, solo deja de usarlas.')) return;
+  CLASES = CLASES.filter(c=>c.id!==id);
+  saveContent();
+  gsFireAndForget('deleteClase', { id });
+  openAdminClases();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ADMIN — Empresas (súper admin Nuwek)
+// ══════════════════════════════════════════════════════════════════════════
+function openAdminEmpresas() {
+  document.getElementById('admin-empresas-list').innerHTML = Object.entries(EMPRESAS).map(([id, e]) => {
+    const activos = e.usuarios.filter(u=>u.activo).length;
+    return `<div class="admin-item-row" style="cursor:pointer" onclick="verEmpresaComoSuperAdmin('${id}')">
+      <div class="admin-item-info">
+        <div class="admin-item-name">${e.nombre}</div>
+        <div class="admin-item-sub">${activos} de ${e.maxUsuarios} licencias en uso</div>
+      </div>
+      <div class="admin-item-actions">→</div>
+    </div>`;
+  }).join('') || '<div style="padding:1rem;color:rgba(51,69,94,0.5);font-size:13px">No hay Empresas todavía.</div>';
+  showScreen('admin-empresas');
+}
+
+function verEmpresaComoSuperAdmin(empresaId) {
+  currentAdminEmpresaId = empresaId;
+  openAdminUsuarios();
+}
+
+function openEmpresaForm() { showScreen('admin-empresa-form'); }
+
+function saveEmpresaNueva() {
+  const nombre = document.getElementById('ef-nombre').value.trim();
+  const max = parseInt(document.getElementById('ef-max').value, 10);
+  const adminUser = document.getElementById('ef-admin-user').value.trim();
+  const adminPass = document.getElementById('ef-admin-pass').value.trim();
+  if (!nombre || !max || !adminUser || !adminPass) { alert('Llena todos los campos.'); return; }
+  if (SUPER_ADMIN.nombre === adminUser || Object.values(EMPRESAS).some(e => e.usuarios.some(u=>u.nombre===adminUser))) {
+    alert('Ese usuario ya existe en otra Empresa — elige otro nombre de usuario.'); return;
+  }
+  const id = slugify(nombre);
+  EMPRESAS[id] = {
+    nombre, maxUsuarios: max,
+    usuarios: [{ nombre: adminUser, password: adminPass, rol:'admin_empresa', activo:true }],
+    asignaciones: {},
+  };
+  saveEmpresas();
+  renderLoginHelp();
+  gsFireAndForget('saveEmpresaNueva', { id, nombre, maxUsuarios: max, adminUser, adminPass });
+  alert(`Empresa "${nombre}" creada. Comparte con ellos:\nUsuario: ${adminUser}\nContraseña: ${adminPass}`);
+  openAdminEmpresas();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ADMIN — Usuarios y Licencias (de UNA Empresa a la vez, según currentAdminEmpresaId)
+// ══════════════════════════════════════════════════════════════════════════
+function openAdminUsuarios() {
+  const emp = EMPRESAS[currentAdminEmpresaId];
+  document.getElementById('au-empresa-nombre').textContent = emp.nombre;
+  document.getElementById('au-max').value = emp.maxUsuarios;
+  renderUsuariosList();
+  showScreen('admin-usuarios');
+}
+
+function updateMaxUsuarios() {
+  const val = parseInt(document.getElementById('au-max').value, 10);
+  if (!val || val < 1) { alert('Pon un número válido.'); return; }
+  EMPRESAS[currentAdminEmpresaId].maxUsuarios = val;
+  saveEmpresas();
+  gsFireAndForget('updateMaxUsuarios', { empresaId: currentAdminEmpresaId, max: val });
+  renderUsuariosList();
+}
+
+function inviteUsuario() {
+  const emp = EMPRESAS[currentAdminEmpresaId];
+  const nombre = document.getElementById('au-invite-name').value.trim();
+  const password = document.getElementById('au-invite-pass').value.trim();
+  if (!nombre || !password) { alert('Ponle usuario y contraseña.'); return; }
+  if (SUPER_ADMIN.nombre === nombre || Object.values(EMPRESAS).some(e => e.usuarios.some(u=>u.nombre===nombre))) { alert('Ese nombre de usuario ya existe.'); return; }
+  const activos = emp.usuarios.filter(u => u.activo).length;
+  if (activos >= emp.maxUsuarios) { alert(`Ya llegaron al tope de ${emp.maxUsuarios} licencias. Libera un asiento o sube el tope antes de invitar a alguien más.`); return; }
+  emp.usuarios.push({ nombre, password, rol:'vendedor', activo:true });
+  emp.asignaciones[nombre] = [];
+  saveEmpresas();
+  renderLoginHelp();
+  gsFireAndForget('inviteUsuario', { empresaId: currentAdminEmpresaId, nombre, password });
+  document.getElementById('au-invite-name').value = '';
+  document.getElementById('au-invite-pass').value = '';
+  renderUsuariosList();
+}
+
+function toggleUsuarioActivo(nombre) {
+  const emp = EMPRESAS[currentAdminEmpresaId];
+  const u = emp.usuarios.find(x=>x.nombre===nombre);
+  if (!u) return;
+  if (!u.activo) {
+    const activos = emp.usuarios.filter(x => x.activo).length;
+    if (activos >= emp.maxUsuarios) { alert(`Ya llegaron al tope de ${emp.maxUsuarios} licencias.`); return; }
+  }
+  u.activo = !u.activo;
+  saveEmpresas();
+  gsFireAndForget('toggleUsuarioActivo', { empresaId: currentAdminEmpresaId, nombre });
+  renderUsuariosList();
+}
+
+function toggleAsignacion(nombre, claseId) {
+  const emp = EMPRESAS[currentAdminEmpresaId];
+  if (!emp.asignaciones[nombre]) emp.asignaciones[nombre] = [];
+  const arr = emp.asignaciones[nombre];
+  const idx = arr.indexOf(claseId);
+  if (idx >= 0) arr.splice(idx,1); else arr.push(claseId);
+  saveEmpresas();
+  gsFireAndForget('toggleAsignacion', { empresaId: currentAdminEmpresaId, nombre, claseId });
+}
+
+function renderUsuariosList() {
+  const emp = EMPRESAS[currentAdminEmpresaId];
+  const activos = emp.usuarios.filter(u=>u.activo).length;
+  document.getElementById('au-cap-status').textContent = `${activos} de ${emp.maxUsuarios} licencias en uso`;
+  document.getElementById('admin-usuarios-list').innerHTML = emp.usuarios.map(u => {
+    const asignadas = emp.asignaciones[u.nombre] || [];
+    return `<div class="usuario-card">
+      <div class="usuario-top">
+        <div class="usuario-name">${u.nombre} ${u.rol==='admin_empresa'?'<span class="paso-branch-badge">admin</span>':''}</div>
+        <button class="toggle-switch ${u.activo?'on':''}" onclick="toggleUsuarioActivo('${u.nombre}')" title="${u.activo?'Activo':'Inactivo'}"></button>
+      </div>
+      <div style="font-size:11px;font-weight:800;color:rgba(51,69,94,0.5);text-transform:uppercase;margin-bottom:6px">Clases asignadas</div>
+      ${CLASES.map(c => `<div class="clase-check-row">
+        <input type="checkbox" ${asignadas.includes(c.id)?'checked':''} onchange="toggleAsignacion('${u.nombre}','${c.id}')">
+        <span>${c.nombre}</span>
+      </div>`).join('')}
+    </div>`;
+  }).join('') || '<div style="padding:1rem;color:rgba(51,69,94,0.5);font-size:13px">No hay usuarios todavía.</div>';
+}
+</script>
+</body>
+</html>
