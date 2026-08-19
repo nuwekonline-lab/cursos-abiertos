@@ -588,6 +588,17 @@ function gsFireAndForget(action, data) {
   });
 }
 
+// Igual que gsFireAndForget, pero también confirma cuando SÍ se guardó — para las pantallas
+// de edición de contenido, donde "no saber si de verdad se guardó" es lo más caro de todo.
+function guardarConConfirmacion(action, data, etiqueta) {
+  gs(action, data).then(res => {
+    if (res && res.ok) mostrarToast(`✅ ${etiqueta} guardada en Google Sheets.`, 'ok');
+    else mostrarToast(`⚠️ ${etiqueta} NO se guardó en Sheets — revisa tu conexión y vuelve a intentar.`, 'bad');
+  }).catch(() => {
+    mostrarToast(`⚠️ ${etiqueta} NO se guardó en Sheets — revisa tu conexión y vuelve a intentar.`, 'bad');
+  });
+}
+
 function mostrarToast(msg, tipo) {
   let el = document.getElementById('nuwek-toast');
   if (!el) {
@@ -2026,6 +2037,7 @@ function saveTecnica() {
   if (!nombre) { alert('Ponle nombre a la técnica.'); return; }
   const esRamificada = document.getElementById('tf-ramificada').classList.contains('selected');
   const id = tfEditingId || slugify(nombre);
+  const existente = TECNICAS[id] || {}; // preserva campos que el formulario no captura (ej. explicación)
 
   if (tfEditingId) {
     const usadaEn = clasesQueUsanTecnica(id);
@@ -2038,19 +2050,19 @@ function saveTecnica() {
       const clave = r.clave || slugify(r.label);
       ramas[clave] = { label: r.label, correcto: r.correcto };
     });
-    TECNICAS[id] = { id, nombre, ramificada:true, ramas };
+    TECNICAS[id] = { ...existente, id, nombre, ramificada:true, ramas };
   } else {
     if (!tfLists.disparadores.length) { alert('Agrega al menos una frase disparadora.'); return; }
     if (!tfLists.correctas.length) { alert('Agrega al menos una respuesta correcta.'); return; }
     TECNICAS[id] = {
-      id, nombre, ramificada:false,
+      ...existente, id, nombre, ramificada:false,
       disparadores: [...tfLists.disparadores],
       correctas: [...tfLists.correctas],
       incorrectas: [...tfLists.incorrectas],
     };
   }
   saveContent();
-  gsFireAndForget('saveTecnica', { tecnica: TECNICAS[id] });
+  guardarConConfirmacion('saveTecnica', { tecnica: TECNICAS[id] }, 'Técnica');
   openAdminTecnicas();
 }
 
@@ -2116,10 +2128,12 @@ function saveClase() {
   const pasos = pasosValidos.map((tid,i) => ({ orden:i+1, tecnicaId:tid }));
 
   const idx = CLASES.findIndex(c=>c.id===id);
-  if (idx >= 0) CLASES[idx] = { id, nombre, pasos };
-  else CLASES.push({ id, nombre, pasos });
+  const existente = idx >= 0 ? CLASES[idx] : {}; // preserva campos que el formulario no captura (ej. resumenEjemplos)
+  const claseGuardada = { ...existente, id, nombre, pasos };
+  if (idx >= 0) CLASES[idx] = claseGuardada;
+  else CLASES.push(claseGuardada);
   saveContent();
-  gsFireAndForget('saveClase', { clase: CLASES.find(c=>c.id===id) });
+  guardarConConfirmacion('saveClase', { clase: claseGuardada }, 'Clase');
   openAdminClases();
 }
 
